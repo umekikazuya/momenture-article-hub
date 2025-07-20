@@ -12,7 +12,7 @@ func main() {
 	})
 
 	// Health check endpoint
-	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/up", func(w http.ResponseWriter, r *http.Request) {
 		log.Println("Health check endpoint hit")
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprintf(w, "OK")

@@ -18,4 +18,4 @@ COPY . .
 EXPOSE 8080
 
 # コンテナ起動時にAirを実行
-CMD ["air"]
+CMD ["air", "-c", ".air.toml"]

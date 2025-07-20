@@ -1,0 +1,54 @@
+services:
+  article-hub-app:
+    build:
+      context: .
+      dockerfile: Dockerfile.development
+    container_name: article-hub-app
+    ports:
+      - "${APP_EXTERNAL_PORT:-8080}:8080"
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    depends_on:
+      - article-hub-db
+      - article-hub-db-test
+    command: air
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  article-hub-db:
+    image: postgres:16-alpine
+    container_name: article-hub-db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-article_hub_dev}
+      POSTGRES_USER: ${POSTGRES_USER:-user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+    ports:
+      - "${POSTGRES_EXTERNAL_PORT:-5432}:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  article-hub-db-test:
+    image: postgres:16-alpine
+    container_name: article-hub-db-test
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB_TEST:-article_hub_test}
+      POSTGRES_USER: ${POSTGRES_USER_TEST:-user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD_TEST:-password}
+    ports:
+      - "${POSTGRES_TEST_EXTERNAL_PORT:-5433}:5432"
+    volumes:
+      - db_test_data:/var/lib/postgresql/data
+
+volumes:
+  db_data:
+  db_test_data:

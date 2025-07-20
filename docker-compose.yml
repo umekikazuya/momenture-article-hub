@@ -1,9 +1,9 @@
 services:
-  app:
+  article-hub-app:
     build:
       context: .
       dockerfile: Dockerfile.development
-    container_name: app
+    container_name: article-hub-app
     ports:
       - "${APP_EXTERNAL_PORT:-8080}:8080"
     volumes:
@@ -11,7 +11,8 @@ services:
     env_file:
       - .env
     depends_on:
-      - db
+      - article-hub-db
+      - article-hub-db-test
     command: air
     logging:
       driver: "json-file"
@@ -19,9 +20,9 @@ services:
         max-size: "10m"
         max-file: "3"
 
-  db:
+  article-hub-db:
     image: postgres:16-alpine
-    container_name: db
+    container_name: article-hub-db
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-article_hub_dev}
       POSTGRES_USER: ${POSTGRES_USER:-user}
@@ -36,9 +37,9 @@ services:
         max-size: "10m"
         max-file: "3"
 
-  db_test:
+  article-hub-db-test:
     image: postgres:16-alpine
-    container_name: db_test
+    container_name: article-hub-db-test
     environment:
       POSTGRES_DB: ${POSTGRES_DB_TEST:-article_hub_test}
       POSTGRES_USER: ${POSTGRES_USER_TEST:-user}

@@ -19,8 +19,8 @@ docker-compose*.yml
 *.dll
 *.so
 *.dylib
-main              # ← ホスト側のmainファイルを除外
-.tmp/             # ← .tmpディレクトリを除外（より安全）
+main
+.tmp/
 
 # Test binary
 *.test
@@ -50,8 +50,6 @@ README.md
 
 # Development tools
 tmp/
-.air.toml
 
 # Database files
 *.db
-*.sqlite

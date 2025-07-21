@@ -254,7 +254,6 @@ func (a *Article) Update(
 		if err := a.ChangeProvider(newProvider); err != nil {
 			return fmt.Errorf("failed to change provider: %w", err)
 		}
-		a.ProviderType = newProvider
 	} else {
 		a.ProviderType = nil
 	}

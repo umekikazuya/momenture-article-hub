@@ -242,31 +242,188 @@ func TestArticleUsecase_CreateArticle(t *testing.T) {
 
 func TestArticleUsecase_GetArticles(t *testing.T) {
 	t.Run("全ての記事をページネーションなしで取得", func(t *testing.T) {
-		t.Skip("GetArticles method not implemented yet - RED phase")
+		mockRepo := new(MockArticleRepository)
+		uc := article.NewArticleUsecase(mockRepo)
+
+		expectedArticles := []*entity.Article{
+			{ID: 1, Title: vo.ArticleTitle("Article 1"), Status: vo.ArticleStatus("draft")},
+			{ID: 2, Title: vo.ArticleTitle("Article 2"), Status: vo.ArticleStatus("published")},
+		}
+
+		mockRepo.On("FindAll", mock.Anything).Return(expectedArticles, nil)
+
+		output, err := uc.FindAllArticles(context.Background())
+
+		assert.NoError(t, err)
+		assert.NotNil(t, output)
+		assert.Len(t, output, len(expectedArticles))
+		assert.Equal(t, int64(len(expectedArticles)), int64(len(output)))
 	})
 
 	t.Run("ステータスでフィルタリング", func(t *testing.T) {
-		t.Skip("GetArticles method not implemented yet - RED phase")
+		mockRepo := new(MockArticleRepository)
+		uc := article.NewArticleUsecase(mockRepo)
+
+		status := "draft"
+		expectedArticles := []*entity.Article{
+			{ID: 1, Title: vo.ArticleTitle("Draft Article 1"), Status: vo.ArticleStatus(status)},
+			{ID: 2, Title: vo.ArticleTitle("Draft Article 2"), Status: vo.ArticleStatus(status)},
+		}
+
+		mockRepo.On("FindByCriteria", mock.Anything, repository.ArticleQueryCriteria{
+			Status: &status,
+			Page:   1,
+			Limit:  10,
+		}).Return(expectedArticles, len(expectedArticles), nil)
+
+		input := article.FindByCriteriaInput{
+			Status: ptr(status),
+			Page:   1,
+			Limit:  10,
+		}
+
+		output, err := uc.FindByCriteria(context.Background(), input)
+
+		assert.NoError(t, err)
+		assert.NotNil(t, output)
+		assert.Len(t, output.Articles, len(expectedArticles))
+		assert.Equal(t, int64(len(expectedArticles)), output.Total)
 	})
 
 	t.Run("プロバイダタイプでフィルタリング", func(t *testing.T) {
-		t.Skip("GetArticles method not implemented yet - RED phase")
+		mockRepo := new(MockArticleRepository)
+		uc := article.NewArticleUsecase(mockRepo)
+
+		providerType := "qiita"
+		providerTypeVal := vo.ProviderType(providerType)
+		expectedArticles := []*entity.Article{
+			{ID: 1, Title: vo.ArticleTitle("Qiita Article 1"), ProviderType: &providerTypeVal},
+			{ID: 2, Title: vo.ArticleTitle("Qiita Article 2"), ProviderType: &providerTypeVal},
+		}
+
+		mockRepo.On("FindByCriteria", mock.Anything, repository.ArticleQueryCriteria{
+			ProviderType: &providerType,
+			Page:         1,
+			Limit:        10,
+		}).Return(expectedArticles, len(expectedArticles), nil)
+
+		input := article.FindByCriteriaInput{
+			ProviderType: ptr(providerType),
+			Page:         1,
+			Limit:        10,
+		}
+
+		output, err := uc.FindByCriteria(context.Background(), input)
+
+		assert.NoError(t, err)
+		assert.NotNil(t, output)
+		assert.Len(t, output.Articles, len(expectedArticles))
+		assert.Equal(t, int64(len(expectedArticles)), output.Total)
 	})
 
 	t.Run("ソート順を指定して取得", func(t *testing.T) {
-		t.Skip("GetArticles method not implemented yet - RED phase")
+		mockRepo := new(MockArticleRepository)
+		uc := article.NewArticleUsecase(mockRepo)
+
+		expectedArticles := []*entity.Article{
+			{ID: 1, Title: vo.ArticleTitle("Article 1"), CreatedAt: time.Now().Add(-time.Hour)},
+			{ID: 2, Title: vo.ArticleTitle("Article 2"), CreatedAt: time.Now()},
+		}
+
+		mockRepo.On("FindByCriteria", mock.Anything, repository.ArticleQueryCriteria{
+			SortBy:    ptr("created_at"),
+			SortOrder: ptr("desc"),
+			Page:      1,
+			Limit:     10,
+		}).Return(expectedArticles, len(expectedArticles), nil)
+
+		input := article.FindByCriteriaInput{
+			SortBy:    ptr("created_at"),
+			SortOrder: ptr("desc"),
+			Page:      1,
+			Limit:     10,
+		}
+
+		output, err := uc.FindByCriteria(context.Background(), input)
+
+		assert.NoError(t, err)
+		assert.NotNil(t, output)
+		assert.Len(t, output.Articles, len(expectedArticles))
+		assert.Equal(t, int64(len(expectedArticles)), output.Total)
 	})
 
 	t.Run("ページネーション適用", func(t *testing.T) {
-		t.Skip("GetArticles method not implemented yet - RED phase")
+		mockRepo := new(MockArticleRepository)
+		uc := article.NewArticleUsecase(mockRepo)
+
+		expectedArticles := []*entity.Article{
+			{ID: 1, Title: vo.ArticleTitle("Article 1"), CreatedAt: time.Now().Add(-time.Hour)},
+			{ID: 2, Title: vo.ArticleTitle("Article 2"), CreatedAt: time.Now()},
+		}
+
+		mockRepo.On("FindByCriteria", mock.Anything, repository.ArticleQueryCriteria{
+			Page:  1,
+			Limit: 1,
+		}).Return(expectedArticles[:1], 2, nil)
+
+		input := article.FindByCriteriaInput{
+			Page:  1,
+			Limit: 1,
+		}
+
+		output, err := uc.FindByCriteria(context.Background(), input)
+
+		assert.NoError(t, err)
+		assert.NotNil(t, output)
+		assert.Len(t, output.Articles, 1)
+		assert.Equal(t, int64(2), output.Total)
 	})
 
 	t.Run("記事が見つからない場合は空の結果", func(t *testing.T) {
-		t.Skip("GetArticles method not implemented yet - RED phase")
+		mockRepo := new(MockArticleRepository)
+		uc := article.NewArticleUsecase(mockRepo)
+
+		mockRepo.On("FindByCriteria", mock.Anything, repository.ArticleQueryCriteria{
+			Page:  1,
+			Limit: 10,
+		}).Return([]*entity.Article{}, 0, nil)
+
+		input := article.FindByCriteriaInput{
+			Page:  1,
+			Limit: 10,
+		}
+
+		output, err := uc.FindByCriteria(context.Background(), input)
+
+		assert.NoError(t, err)
+		assert.NotNil(t, output)
+		assert.Len(t, output.Articles, 0)
+		assert.Equal(t, int64(0), output.Total)
+
+		mockRepo.AssertExpectations(t)
 	})
 
 	t.Run("リポジトリエラーは適切に処理される", func(t *testing.T) {
-		t.Skip("GetArticles method not implemented yet - RED phase")
+		mockRepo := new(MockArticleRepository)
+		uc := article.NewArticleUsecase(mockRepo)
+
+		mockRepo.On("FindByCriteria", mock.Anything, repository.ArticleQueryCriteria{
+			Page:  1,
+			Limit: 10,
+		}).Return(([]*entity.Article)(nil), 0, fmt.Errorf("db error"))
+
+		input := article.FindByCriteriaInput{
+			Page:  1,
+			Limit: 10,
+		}
+
+		output, err := uc.FindByCriteria(context.Background(), input)
+
+		assert.Error(t, err)
+		assert.Nil(t, output)
+		assert.Contains(t, err.Error(), "db error")
+
+		mockRepo.AssertExpectations(t)
 	})
 }
 

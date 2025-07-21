@@ -31,6 +31,9 @@ func NewProviderType(value *string) (*ProviderType, error) {
 
 // IsValid はプロバイダタイプが有効な値であるかを検証。
 func (pt *ProviderType) IsValid() bool {
+	if pt == nil {
+		return false
+	}
 	for _, p := range AllProviderTypes {
 		if *pt == p {
 			return true
@@ -46,6 +49,9 @@ func (pt *ProviderType) String() string {
 
 // このプロバイダタイプが手動投稿を前提とするかどうかを判定(API連携)。
 func (pt *ProviderType) IsManual() bool {
+	if pt == nil {
+		return false
+	}
 	switch pt {
 	default:
 		return false
@@ -54,6 +60,9 @@ func (pt *ProviderType) IsManual() bool {
 
 // 表示名を返す。
 func (pt *ProviderType) DisplayName() string {
+	if pt == nil {
+		return fmt.Sprintf("Unknown Provider (%s)", pt)
+	}
 	switch *pt {
 	case ProviderTypeQiita:
 		return "Qiita"

@@ -7,27 +7,36 @@ import (
 	"github.com/umekikazuya/momenture-article-hub/internal/domain/vo"
 )
 
-// Article is the main entity representing an article in the system.
+// 記事コンテンツのドメインエンティティ。
 type Article struct {
-	ID           uint64           // 記事のユニークID
-	Title        vo.ArticleTitle  // 記事タイトル (値オブジェクト)
-	BodyMarkdown vo.ArticleBody   // 記事本文 (値オブジェクト)
-	Status       vo.ArticleStatus // 記事ステータス (値オブジェクト)
-	ProviderType vo.ProviderType  // 投稿先プロバイダ (値オブジェクト)
-
-	// オプショナルな属性はポインタ型で表現し、値が存在しない場合はnil
-	Link *vo.Link // 外部URL (値オブジェクト, ポインタでNULL許容)
-
-	CreatedAt time.Time  // 作成日時
-	UpdatedAt time.Time  // 更新日時
-	DeletedAt *time.Time // 論理削除日時 (ポインタでNULL許容。削除されていない場合はnil)
+	ID           uint64           // 記事のユニークID (永続化時に払い出される)
+	Title        vo.ArticleTitle  // 記事タイトル
+	Body         *vo.ArticleBody  // 記事本文
+	Status       vo.ArticleStatus // 記事ステータス
+	ProviderType *vo.ProviderType // 投稿先プロバイダ
+	Link         *vo.Link         // 外部URL
+	CreatedAt    time.Time        // 作成日時
+	UpdatedAt    time.Time        // 更新日時
+	DeletedAt    *time.Time       // 論理削除日時
 }
 
-// ArticleOption はArticleを生成・設定するための関数型オプションです。
+// 記事の属性を更新するためFunctional Optionパターンを使用。
 type ArticleOption func(*Article) error
 
-// WithLink は記事のリンクを設定するArticleOptionです。
-func WithLink(link string) ArticleOption {
+// オプション関数。
+func WithBody(body *string) ArticleOption {
+	return func(a *Article) error {
+		b, err := vo.NewArticleBody(body)
+		if err != nil {
+			return fmt.Errorf("invalid body for article option: %w", err)
+		}
+		a.Body = b
+		return nil
+	}
+}
+
+// オプション関数。
+func WithLink(link *string) ArticleOption {
 	return func(a *Article) error {
 		l, err := vo.NewLink(link)
 		if err != nil {
@@ -38,44 +47,42 @@ func WithLink(link string) ArticleOption {
 	}
 }
 
-// NewArticle は新しいArticleエンティティを生成するファクトリメソッドです。
-// IDとタイムスタンプはここで初期化されます。
-// オプショナルな設定はFunctional Optionで渡されます。
+// オプション関数。
+func WithProviderType(providerType *string) ArticleOption {
+	return func(a *Article) error {
+		pt, err := vo.NewProviderType(providerType)
+		if err != nil {
+			return fmt.Errorf("invalid provider type for article option: %w", err)
+		}
+		a.ProviderType = pt
+		return nil
+	}
+}
+
+// Factory Method.
+// 新しいArticleエンティティを生成する。
 func NewArticle(
 	title string,
-	bodyMarkdown string,
-	status string, // vo.ArticleStatusのstring表現
-	providerType string, // vo.ProviderTypeのstring表現
+	status string,
 	opts ...ArticleOption,
 ) (*Article, error) {
-	// 値オブジェクトの生成とバリデーション (必須フィールド)
+	// 必須フィールドの検証と組み立て。
 	artTitle, err := vo.NewArticleTitle(title)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create article title: %w", err)
-	}
-	artBody, err := vo.NewArticleBody(bodyMarkdown)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create article body: %w", err)
 	}
 	artStatus := vo.ArticleStatus(status)
 	if !artStatus.IsValid() {
 		return nil, fmt.Errorf("invalid article status: %s", status)
 	}
-	provType := vo.ProviderType(providerType)
-	if !provType.IsValid() {
-		return nil, fmt.Errorf("invalid provider type: %s", providerType)
-	}
-
 	now := time.Now()
+
 	article := &Article{
-		// IDは永続化時にDBから払い出されるため、ここでは0または初期値
-		Title:        artTitle,
-		BodyMarkdown: artBody,
-		Status:       artStatus,
-		ProviderType: provType,
-		CreatedAt:    now,
-		UpdatedAt:    now,
-		DeletedAt:    nil, // 初期状態では削除されていない
+		Title:     artTitle,
+		Status:    artStatus,
+		CreatedAt: now,
+		UpdatedAt: now,
+		DeletedAt: nil,
 	}
 
 	// Functional Optionの適用
@@ -88,73 +95,117 @@ func NewArticle(
 	return article, nil
 }
 
-// Publish は記事のステータスを公開済みに変更します。
+// Factory Method.
+// データベースなどから読み込んだ既存のArticleエンティティを再構築。
+// - IDとタイムスタンプは既に存在するものとして受け取る。
+// - 永続化層（リポジトリ実装）からのみ呼び出されることを想定。
+func ReconstituteArticle(
+	id uint64,
+	title string,
+	status string,
+	body *string,
+	providerType *string,
+	link *string,
+	createdAt time.Time,
+	updatedAt time.Time,
+	deletedAt *time.Time,
+) (*Article, error) {
+	artTitle, err := vo.NewArticleTitle(title)
+	if err != nil {
+		return nil, fmt.Errorf("failed to reconstitute article title: %w", err)
+	}
+	artBody, err := vo.NewArticleBody(body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to reconstitute article body: %w", err)
+	}
+	artStatus := vo.ArticleStatus(status)
+	if !artStatus.IsValid() {
+		return nil, fmt.Errorf("invalid article status for reconstitution: %s", status)
+	}
+	provType, err := vo.NewProviderType(providerType)
+	if err != nil {
+		return nil, fmt.Errorf("failed to reconstitute article provider type: %w", err)
+	}
+	artLink, err := vo.NewLink(link)
+	if err != nil {
+		return nil, fmt.Errorf("failed to reconstitute article link: %w", err)
+	}
+
+	article := &Article{
+		ID:           id,
+		Title:        artTitle,
+		Body:         artBody,
+		Status:       artStatus,
+		ProviderType: provType,
+		Link:         artLink,
+		CreatedAt:    createdAt,
+		UpdatedAt:    updatedAt,
+		DeletedAt:    deletedAt,
+	}
+
+	// 全てのフィールドが引数で提供される前提のためFunctional Optionは使わない。
+	return article, nil
+}
+
+// 記事のステータスを公開済みに変更。
 func (a *Article) Publish() error {
-	if a.Status == vo.ArticleStatusPublished {
+	if a.Status.IsPublished() {
 		return fmt.Errorf("article is already published")
 	}
 	a.Status = vo.ArticleStatusPublished
-	a.UpdatedAt = time.Now() // 更新日時を更新
+	a.UpdatedAt = time.Now()
 	return nil
 }
 
-// Draft は記事のステータスを下書きに変更します。
+// 記事のステータスを下書きに変更。
 func (a *Article) Draft() error {
-	if a.Status == vo.ArticleStatusDraft {
+	if a.Status.IsDraft() {
 		return fmt.Errorf("article is already in draft status")
 	}
 	a.Status = vo.ArticleStatusDraft
-	a.UpdatedAt = time.Now() // 更新日時を更新
+	a.UpdatedAt = time.Now()
 	return nil
 }
 
-// SoftDelete は記事を論理削除します。
+// 記事を論理削除。
 func (a *Article) SoftDelete() error {
-	if a.DeletedAt != nil { // DeletedAtがnilでない場合は既に削除済み
+	if a.DeletedAt != nil {
 		return fmt.Errorf("article is already soft deleted")
 	}
 	now := time.Now()
-	a.DeletedAt = &now // ポインタに現在日時を設定
-	a.UpdatedAt = now  // 更新日時も更新
+	a.DeletedAt = &now
+	a.UpdatedAt = now
 	return nil
 }
 
-// Restore は論理削除された記事を復元します。
+// 論理削除された記事を復元。
 func (a *Article) Restore() error {
-	if a.DeletedAt == nil { // DeletedAtがnilの場合は削除されていない
+	if a.DeletedAt == nil {
 		return fmt.Errorf("article is not soft deleted")
 	}
-	a.DeletedAt = nil        // nilに戻す
-	a.UpdatedAt = time.Now() // 更新日時も更新
+	a.DeletedAt = nil
+	a.UpdatedAt = time.Now()
 	return nil
 }
 
-// ChangeProvider は記事のプロバイダタイプを変更します。
-// ビジネスルール: 例として、既に公開済みの記事のプロバイダ変更は許可しない
+// ChangeProvider は記事のプロバイダタイプを変更。
+// 既に公開済みの記事のプロバイダ変更は許可しない。
 func (a *Article) ChangeProvider(newProviderType vo.ProviderType) error {
-	if !newProviderType.IsValid() {
-		return fmt.Errorf("invalid new provider type: %s", newProviderType)
-	}
-	if a.Status == vo.ArticleStatusPublished {
+	if a.Status.IsPublished() {
 		return fmt.Errorf("cannot change provider for a published article")
 	}
-	a.ProviderType = newProviderType
-	a.UpdatedAt = time.Now() // 更新日時を更新
+	a.ProviderType = &newProviderType
+	a.UpdatedAt = time.Now()
 	return nil
 }
 
-// UpdateFromInput はユースケース層からの入力に基づいてArticleの属性を更新します。
-// 各属性の更新ロジックやバリデーションをカプセル化します。
-// このメソッドは、更新可能な属性のみを受け取るように設計します。
-// 引数はポインタ型でnilの場合、そのフィールドは更新されないことを意味します。
-func (a *Article) UpdateFromInput(
+// Articleの属性を更新する。
+func (a *Article) Update(
 	title *string,
-	bodyMarkdown *string,
+	body *string,
 	status *string,
 	providerType *string,
 	link *string,
-	externalPlatformID *string,
-	externalMetadata map[string]interface{},
 ) error {
 	if title != nil {
 		newTitle, err := vo.NewArticleTitle(*title)
@@ -163,41 +214,44 @@ func (a *Article) UpdateFromInput(
 		}
 		a.Title = newTitle
 	}
-	if bodyMarkdown != nil {
-		newBody, err := vo.NewArticleBody(*bodyMarkdown)
+	if body != nil {
+		newBody, err := vo.NewArticleBody(body)
 		if err != nil {
 			return fmt.Errorf("failed to update body: %w", err)
 		}
-		a.BodyMarkdown = newBody
+		a.Body = newBody
+	} else {
+		a.Body = nil
 	}
 	if status != nil {
 		newStatus := vo.ArticleStatus(*status)
 		if !newStatus.IsValid() {
 			return fmt.Errorf("invalid status provided for update: %s", *status)
 		}
-		// @todo ステータス変更のビジネスルールはPublish/Draftメソッド経由で適用するのが理想的だが、
-		// ここでは簡略化のため直接代入。厳密にはa.Publish()/a.Draft()を呼ぶべきか検討
 		a.Status = newStatus
 	}
 	if providerType != nil {
-		newProvider := vo.ProviderType(*providerType)
-		// ChangeProviderメソッドを使ってビジネスルールを適用
-		if err := a.ChangeProvider(newProvider); err != nil {
+		newProvider, err := vo.NewProviderType(providerType)
+		if err != nil {
 			return fmt.Errorf("failed to change provider: %w", err)
 		}
+		if err := a.ChangeProvider(*newProvider); err != nil {
+			return fmt.Errorf("failed to change provider: %w", err)
+		}
+		a.ProviderType = newProvider
+	} else {
+		a.ProviderType = nil
 	}
 	if link != nil {
-		// linkが空文字列の場合にnilを設定するビジネスルールはここで考慮
-		if *link == "" {
-			a.Link = nil
-		} else {
-			newLink, err := vo.NewLink(*link)
-			if err != nil {
-				return fmt.Errorf("failed to update link: %w", err)
-			}
-			a.Link = newLink
+		newLink, err := vo.NewLink(link)
+		if err != nil {
+			return fmt.Errorf("failed to update link: %w", err)
 		}
+		a.Link = newLink
+	} else {
+		a.Link = nil
 	}
-	a.UpdatedAt = time.Now() // 最終更新日時を更新
+
+	a.UpdatedAt = time.Now()
 	return nil
 }

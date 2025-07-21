@@ -10,15 +10,14 @@ const MaxArticleTitleLength = 100
 
 // NewArticleTitle は新しいArticleTitle値オブジェクトを生成します。
 // 生成時にバリデーションを行い、無効な場合はエラーを返します。
-func NewArticleTitle(value string) (*ArticleTitle, error) {
+func NewArticleTitle(value string) (ArticleTitle, error) {
 	if len(value) == 0 {
-		return nil, fmt.Errorf("article title cannot be empty")
+		return "", fmt.Errorf("article title cannot be empty")
 	}
 	if len(value) > MaxArticleTitleLength {
-		return nil, fmt.Errorf("article title exceeds maximum length of %d characters", MaxArticleTitleLength)
+		return "", fmt.Errorf("article title exceeds maximum length of %d characters", MaxArticleTitleLength)
 	}
-	title := ArticleTitle(value)
-	return &title, nil
+	return ArticleTitle(value), nil
 }
 
 // String はArticleTitleの文字列表現を返します。

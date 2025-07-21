@@ -2,9 +2,7 @@ package vo
 
 import "fmt"
 
-// Value Object - ProviderType.
-// 記事が紐づく外部プロバイダの種類を表す。
-// その値によって識別され不変。
+// ProviderType は記事投稿先プロバイダの種類を表すValue Object
 type ProviderType string
 
 const (
@@ -12,7 +10,6 @@ const (
 	ProviderTypeZenn  ProviderType = "zenn"
 )
 
-// AllProviderTypes は定義されている全てのProviderTypeのリストを返す。
 var AllProviderTypes = []ProviderType{
 	ProviderTypeQiita,
 	ProviderTypeZenn,
@@ -29,7 +26,6 @@ func NewProviderType(value *string) (*ProviderType, error) {
 	return &pt, nil
 }
 
-// IsValid はプロバイダタイプが有効な値であるかを検証。
 func (pt *ProviderType) IsValid() bool {
 	if pt == nil {
 		return false
@@ -42,12 +38,11 @@ func (pt *ProviderType) IsValid() bool {
 	return false
 }
 
-// String はProviderTypeの文字列表現を返す。
 func (pt *ProviderType) String() string {
 	return string(*pt)
 }
 
-// このプロバイダタイプが手動投稿を前提とするかどうかを判定(API連携)。
+// API連携の可否を判定
 func (pt *ProviderType) IsManual() bool {
 	if pt == nil {
 		return false
@@ -58,7 +53,6 @@ func (pt *ProviderType) IsManual() bool {
 	}
 }
 
-// 表示名を返す。
 func (pt *ProviderType) DisplayName() string {
 	if pt == nil {
 		return fmt.Sprintf("Unknown Provider (%s)", pt)

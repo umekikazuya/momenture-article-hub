@@ -2,14 +2,12 @@ package vo
 
 import "fmt"
 
-// ArticleTitle は記事のタイトルを表す値オブジェクトです。
-// 不変であり、100文字以内というビジネスルールを持ちます。
+// ArticleTitle は記事タイトルを表すValue Object
 type ArticleTitle string
 
+// タイトルの最大文字数制限
 const MaxArticleTitleLength = 100
 
-// NewArticleTitle は新しいArticleTitle値オブジェクトを生成します。
-// 生成時にバリデーションを行い、無効な場合はエラーを返します。
 func NewArticleTitle(value string) (ArticleTitle, error) {
 	if len(value) == 0 {
 		return "", fmt.Errorf("article title cannot be empty")
@@ -20,7 +18,6 @@ func NewArticleTitle(value string) (ArticleTitle, error) {
 	return ArticleTitle(value), nil
 }
 
-// String はArticleTitleの文字列表現を返します。
 func (t ArticleTitle) String() string {
 	return string(t)
 }

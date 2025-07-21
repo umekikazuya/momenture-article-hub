@@ -1,19 +1,21 @@
 package vo
 
-// Value Object - ArticleBody.
-// 記事の本文を表す。
+// ArticleBody は記事本文を表すValue Object
 type ArticleBody string
 
-// NewArticleBody は新しいArticleBody値オブジェクトを生成する。
+// NewArticleBody は記事本文を作成する
+// 空文字列は値なしとして扱う(必須ではない)
 func NewArticleBody(value *string) (*ArticleBody, error) {
 	if value == nil {
+		return nil, nil
+	}
+	if *value == "" {
 		return nil, nil
 	}
 	body := ArticleBody(*value)
 	return &body, nil
 }
 
-// String returns the string representation of ArticleBody.
 func (b *ArticleBody) String() string {
 	if b == nil {
 		return ""

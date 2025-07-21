@@ -15,5 +15,8 @@ func NewArticleBody(value *string) (*ArticleBody, error) {
 
 // String returns the string representation of ArticleBody.
 func (b *ArticleBody) String() string {
+	if b == nil {
+		return ""
+	}
 	return string(*b)
 }

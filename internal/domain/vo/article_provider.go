@@ -32,7 +32,7 @@ func NewProviderType(value *string) (*ProviderType, error) {
 // IsValid はプロバイダタイプが有効な値であるかを検証。
 func (pt *ProviderType) IsValid() bool {
 	for _, p := range AllProviderTypes {
-		if pt == &p {
+		if *pt == p {
 			return true
 		}
 	}

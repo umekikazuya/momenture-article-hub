@@ -530,9 +530,35 @@ func TestArticleUsecase_UpdateArticle(t *testing.T) {
 
 func TestArticleUsecase_DeleteArticle(t *testing.T) {
 	t.Run("記事が削除される", func(t *testing.T) {
-		t.Skip("DeleteArticle method not implemented yet - RED phase")
+		mockRepo := new(MockArticleRepository)
+		uc := article.NewArticleUsecase(mockRepo)
+
+		id := uint64(1)
+
+		// 既存の記事を作成
+		existingArticle, err := entity.NewArticle("Test Article", "draft")
+		require.NoError(t, err)
+		existingArticle.ID = id
+
+		mockRepo.On("FindByID", mock.Anything, id).Return(existingArticle, nil)
+		mockRepo.On("Delete", mock.Anything, id).Return(nil)
+
+		err = uc.DeleteArticle(context.Background(), id)
+
+		assert.NoError(t, err)
+		mockRepo.AssertExpectations(t)
 	})
 	t.Run("記事が見つからない場合はエラー", func(t *testing.T) {
-		t.Skip("DeleteArticle method not implemented yet - RED phase")
+		mockRepo := new(MockArticleRepository)
+		uc := article.NewArticleUsecase(mockRepo)
+
+		id := uint64(1)
+		mockRepo.On("FindByID", mock.Anything, id).Return(nil, fmt.Errorf("article not found"))
+
+		err := uc.DeleteArticle(context.Background(), id)
+
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "article not found")
+		mockRepo.AssertExpectations(t)
 	})
 }

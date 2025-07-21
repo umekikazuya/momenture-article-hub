@@ -2,6 +2,7 @@ package article
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/umekikazuya/momenture-article-hub/internal/domain/entity"
 	"github.com/umekikazuya/momenture-article-hub/internal/domain/repository"
@@ -90,11 +91,6 @@ func (uc *ArticleUsecase) UpdateArticle(ctx context.Context, id uint64, input Up
 		return nil, err
 	}
 
-	err = uc.repo.Update(ctx, article)
-	if err != nil {
-		return nil, err
-	}
-
 	return &UpdateArticleOutput{
 		ID:           article.ID,
 		Title:        article.Title.String(),
@@ -105,4 +101,16 @@ func (uc *ArticleUsecase) UpdateArticle(ctx context.Context, id uint64, input Up
 		CreatedAt:    article.CreatedAt,
 		UpdatedAt:    article.UpdatedAt,
 	}, nil
+}
+
+// DeleteArticle deletes an article by its ID.
+func (uc *ArticleUsecase) DeleteArticle(ctx context.Context, id uint64) error {
+	entity, err := uc.repo.FindByID(ctx, id)
+	if err != nil {
+		return err
+	}
+	if entity == nil {
+		return fmt.Errorf("a: %d", id)
+	}
+	return uc.repo.Delete(ctx, entity.ID)
 }

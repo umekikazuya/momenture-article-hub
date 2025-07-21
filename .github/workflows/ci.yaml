@@ -1,0 +1,63 @@
+name: Go CI
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+jobs:
+  # 静的解析
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '^1.20'
+
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: latest
+          args: --timeout=5m
+
+  # テスト
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '^1.20'
+
+      - name: Run tests
+        run: go test -v -coverprofile=coverage.out ./...
+
+  # ビルド
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '^1.20'
+
+      - name: Run go mod tidy and check for changes
+        run: |
+          go mod tidy
+          git diff --exit-code go.mod go.sum || { echo "go.mod or go.sum has uncommitted changes. Please run 'go mod tidy' and commit."; exit 1; }
+
+      - name: Build application
+        run: go build -v ./...

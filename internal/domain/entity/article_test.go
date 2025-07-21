@@ -13,9 +13,9 @@ import (
 
 // --- ヘルパー関数 ---
 
-func ptr[T any](v T) *T {
-	return &v
-}
+// func ptr[T any](v T) *T {
+// 	return &v
+// }
 
 // --- テストケース ---
 

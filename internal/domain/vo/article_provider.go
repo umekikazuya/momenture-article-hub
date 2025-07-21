@@ -39,6 +39,9 @@ func (pt *ProviderType) IsValid() bool {
 }
 
 func (pt *ProviderType) String() string {
+	if pt == nil {
+		return ""
+	}
 	return string(*pt)
 }
 

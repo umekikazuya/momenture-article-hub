@@ -34,5 +34,8 @@ func isValid(value *string) error {
 }
 
 func (l *Link) String() string {
+	if l == nil {
+		return ""
+	}
 	return string(*l)
 }

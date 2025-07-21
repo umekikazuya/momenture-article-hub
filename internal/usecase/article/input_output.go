@@ -22,3 +22,24 @@ type CreateArticleOutput struct {
 	CreatedAt    time.Time `json:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at"`
 }
+
+// UpdateArticleInput is the input for updating an article.
+type UpdateArticleInput struct {
+	Title        *string `json:"title,omitempty"`
+	Body         *string `json:"body,omitempty"`
+	Status       *string `json:"status,omitempty"`
+	ProviderType *string `json:"provider_type,omitempty"`
+	Link         *string `json:"link,omitempty"`
+}
+
+// UpdateArticleOutput is the output for updating an article.
+type UpdateArticleOutput struct {
+	ID           uint64    `json:"id"`
+	Title        string    `json:"title"`
+	Body         string    `json:"body"`
+	Status       string    `json:"status"`
+	ProviderType string    `json:"provider_type"`
+	Link         string    `json:"link"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+}

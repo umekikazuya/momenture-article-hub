@@ -47,6 +47,12 @@ func TestNewProviderType(t *testing.T) {
 			want:      nil,
 			assertion: assert.NoError,
 		},
+		{
+			name:      "空文字の場合は作成成功 (nilが返る)",
+			value:     func() *string { s := ""; return &s }(),
+			want:      nil,
+			assertion: assert.NoError,
+		},
 	}
 
 	for _, tt := range tests {

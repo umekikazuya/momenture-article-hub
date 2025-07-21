@@ -19,6 +19,9 @@ func NewProviderType(value *string) (*ProviderType, error) {
 	if value == nil {
 		return nil, nil
 	}
+	if *value == "" {
+		return nil, nil
+	}
 	pt := ProviderType(*value)
 	if !pt.IsValid() {
 		return nil, fmt.Errorf("invalid provider type: %s", *value)

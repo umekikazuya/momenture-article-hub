@@ -46,3 +46,44 @@ func (uc *ArticleUsecase) CreateArticle(ctx context.Context, input CreateArticle
 		UpdatedAt:    articleEntity.UpdatedAt,
 	}, nil
 }
+
+// UpdateArticle updates an existing article.
+func (uc *ArticleUsecase) UpdateArticle(ctx context.Context, id uint64, input UpdateArticleInput) (*UpdateArticleOutput, error) {
+	article, err := uc.repo.FindByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	err = article.Update(
+		input.Title,
+		input.Body,
+		input.Status,
+		input.ProviderType,
+		input.Link,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	err = uc.repo.Update(ctx, article)
+	if err != nil {
+		return nil, err
+	}
+
+	err = uc.repo.Update(ctx, article)
+	if err != nil {
+		return nil, err
+	}
+
+	return &UpdateArticleOutput{
+		ID:           article.ID,
+		Title:        article.Title.String(),
+		Body:         article.Body.String(),
+		Status:       article.Status.String(),
+		ProviderType: article.ProviderType.String(),
+		Link:         article.Link.String(),
+		CreatedAt:    article.CreatedAt,
+		UpdatedAt:    article.UpdatedAt,
+	}, nil
+}

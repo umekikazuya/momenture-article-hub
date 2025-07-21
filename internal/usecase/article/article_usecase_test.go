@@ -285,36 +285,188 @@ func TestArticleUsecase_GetArticleByID(t *testing.T) {
 }
 
 func TestArticleUsecase_UpdateArticle(t *testing.T) {
+	ctx := context.Background()
+
 	t.Run("タイトルのみ更新", func(t *testing.T) {
-		t.Skip("UpdateArticle method not implemented yet - RED phase")
+		mockRepo := new(MockArticleRepository)
+		uc := article.NewArticleUsecase(mockRepo)
+
+		input := article.UpdateArticleInput{
+			Title: ptr("Updated Title"),
+		}
+
+		// 既存の記事を作成
+		existingArticle, err := entity.NewArticle("Original Title", "draft")
+		require.NoError(t, err)
+		existingArticle.ID = 1
+
+		mockRepo.On("FindByID", ctx, uint64(1)).Return(existingArticle, nil)
+		mockRepo.On("Update", ctx, mock.AnythingOfType("*entity.Article")).Return(nil)
+
+		output, err := uc.UpdateArticle(ctx, 1, input)
+
+		assert.NoError(t, err)
+		assert.NotNil(t, output)
+		assert.Equal(t, "Updated Title", output.Title)
+		mockRepo.AssertExpectations(t)
 	})
 
 	t.Run("ステータスを下書きから公開済みに変更", func(t *testing.T) {
-		t.Skip("UpdateArticle method not implemented yet - RED phase")
+		mockRepo := new(MockArticleRepository)
+		uc := article.NewArticleUsecase(mockRepo)
+
+		input := article.UpdateArticleInput{
+			Status: ptr("published"),
+		}
+
+		// 既存の記事を作成
+		existingArticle, err := entity.NewArticle("Original Title", "draft")
+		require.NoError(t, err)
+		existingArticle.ID = 1
+
+		mockRepo.On("FindByID", ctx, uint64(1)).Return(existingArticle, nil)
+		mockRepo.On("Update", ctx, mock.AnythingOfType("*entity.Article")).Return(nil)
+
+		output, err := uc.UpdateArticle(ctx, 1, input)
+
+		assert.NoError(t, err)
+		assert.NotNil(t, output)
+		assert.Equal(t, "published", output.Status)
+		mockRepo.AssertExpectations(t)
 	})
 
 	t.Run("オプションフィールドをクリア", func(t *testing.T) {
-		t.Skip("UpdateArticle method not implemented yet - RED phase")
+		mockRepo := new(MockArticleRepository)
+		uc := article.NewArticleUsecase(mockRepo)
+
+		input := article.UpdateArticleInput{
+			Body:         ptr(""),
+			ProviderType: nil, // 空文字列ではなくnilでクリア
+			Link:         nil, // 空文字列ではなくnilでクリア
+		}
+
+		// 既存の記事を作成（オプションフィールド付き）
+		existingArticle, err := entity.NewArticle("Original Title", "draft",
+			entity.WithBody(ptr("Original Body")),
+			entity.WithProviderType(ptr("qiita")),
+			entity.WithLink(ptr("https://original.com")),
+		)
+		require.NoError(t, err)
+		existingArticle.ID = 1
+
+		mockRepo.On("FindByID", ctx, uint64(1)).Return(existingArticle, nil)
+		mockRepo.On("Update", ctx, mock.AnythingOfType("*entity.Article")).Return(nil)
+
+		output, err := uc.UpdateArticle(ctx, 1, input)
+
+		assert.NoError(t, err)
+		assert.NotNil(t, output)
+		assert.Empty(t, output.Body)
+		assert.Empty(t, output.ProviderType)
+		assert.Empty(t, output.Link)
+		mockRepo.AssertExpectations(t)
 	})
 
 	t.Run("記事が見つからない場合はエラー", func(t *testing.T) {
-		t.Skip("UpdateArticle method not implemented yet - RED phase")
+		mockRepo := new(MockArticleRepository)
+		uc := article.NewArticleUsecase(mockRepo)
+
+		input := article.UpdateArticleInput{
+			Body:         ptr("Updated Body"),
+			ProviderType: ptr("Updated Provider"),
+			Link:         ptr("Updated Link"),
+		}
+
+		mockRepo.On("FindByID", ctx, uint64(1)).Return(nil, fmt.Errorf("article not found"))
+
+		output, err := uc.UpdateArticle(ctx, 1, input)
+
+		assert.Error(t, err)
+		assert.Nil(t, output)
+		assert.Contains(t, err.Error(), "article not found")
+
+		mockRepo.AssertExpectations(t)
 	})
 
 	t.Run("更新内容のバリデーションエラー", func(t *testing.T) {
-		t.Skip("UpdateArticle method not implemented yet - RED phase")
+		mockRepo := new(MockArticleRepository)
+		uc := article.NewArticleUsecase(mockRepo)
+
+		input := article.UpdateArticleInput{
+			// タイトルが長すぎる
+			Title: ptr(strings.Repeat("a", vo.MaxArticleTitleLength+1)),
+		}
+
+		// 既存の記事を作成
+		existingArticle, err := entity.NewArticle("Original Title", "draft")
+		require.NoError(t, err)
+		existingArticle.ID = 1
+
+		mockRepo.On("FindByID", ctx, uint64(1)).Return(existingArticle, nil)
+
+		output, err := uc.UpdateArticle(ctx, 1, input)
+
+		assert.Error(t, err)
+		assert.Nil(t, output)
+		assert.Contains(t, err.Error(), "title exceeds maximum length")
+
+		mockRepo.AssertExpectations(t)
 	})
 
 	t.Run("ドメインルール違反の場合はエラー", func(t *testing.T) {
-		t.Skip("UpdateArticle method not implemented yet - RED phase")
+		mockRepo := new(MockArticleRepository)
+		uc := article.NewArticleUsecase(mockRepo)
+
+		input := article.UpdateArticleInput{
+			Status: ptr("invalid_status"), // 無効なステータス
+		}
+
+		// 既存の記事を作成
+		existingArticle, err := entity.NewArticle("Original Title", "draft")
+		require.NoError(t, err)
+		existingArticle.ID = 1
+
+		mockRepo.On("FindByID", ctx, uint64(1)).Return(existingArticle, nil)
+
+		output, err := uc.UpdateArticle(ctx, 1, input)
+
+		assert.Error(t, err)
+		assert.Nil(t, output)
+		assert.Contains(t, err.Error(), "invalid status")
+
+		mockRepo.AssertExpectations(t)
 	})
 
 	t.Run("リポジトリエラーは適切に処理される", func(t *testing.T) {
-		t.Skip("UpdateArticle method not implemented yet - RED phase")
+		mockRepo := new(MockArticleRepository)
+		uc := article.NewArticleUsecase(mockRepo)
+
+		input := article.UpdateArticleInput{
+			Title: ptr("Updated Title"),
+		}
+
+		// 既存の記事を作成
+		existingArticle, err := entity.NewArticle("Original Title", "draft")
+		require.NoError(t, err)
+		existingArticle.ID = 1
+
+		mockRepo.On("FindByID", ctx, uint64(1)).Return(existingArticle, nil)
+		mockRepo.On("Update", ctx, mock.AnythingOfType("*entity.Article")).Return(fmt.Errorf("repository error"))
+
+		output, err := uc.UpdateArticle(ctx, 1, input)
+
+		assert.Error(t, err)
+		assert.Nil(t, output)
+		assert.Contains(t, err.Error(), "repository error")
+
+		mockRepo.AssertExpectations(t)
 	})
 }
 
 func TestArticleUsecase_DeleteArticle(t *testing.T) {
+	t.Run("記事が削除される", func(t *testing.T) {
+		t.Skip("DeleteArticle method not implemented yet - RED phase")
+	})
 	t.Run("記事が見つからない場合はエラー", func(t *testing.T) {
 		t.Skip("DeleteArticle method not implemented yet - RED phase")
 	})

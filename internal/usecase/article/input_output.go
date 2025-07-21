@@ -23,6 +23,18 @@ type CreateArticleOutput struct {
 	UpdatedAt    time.Time `json:"updated_at"`
 }
 
+// FindArticleByIDOutput is the output for finding an article by ID.
+type FindArticleByIDOutput struct {
+	ID           uint64    `json:"id"`
+	Title        string    `json:"title"`
+	Body         string    `json:"body"`
+	Status       string    `json:"status"`
+	ProviderType string    `json:"provider_type"`
+	Link         string    `json:"link"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+}
+
 // UpdateArticleInput is the input for updating an article.
 type UpdateArticleInput struct {
 	Title        *string `json:"title,omitempty"`

@@ -47,6 +47,25 @@ func (uc *ArticleUsecase) CreateArticle(ctx context.Context, input CreateArticle
 	}, nil
 }
 
+// FindArticleByID retrieves an article by its ID.
+func (uc *ArticleUsecase) FindArticleByID(ctx context.Context, id uint64) (*FindArticleByIDOutput, error) {
+	article, err := uc.repo.FindByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	return &FindArticleByIDOutput{
+		ID:           article.ID,
+		Title:        article.Title.String(),
+		Body:         article.Body.String(),
+		Status:       article.Status.String(),
+		ProviderType: article.ProviderType.String(),
+		Link:         article.Link.String(),
+		CreatedAt:    article.CreatedAt,
+		UpdatedAt:    article.UpdatedAt,
+	}, nil
+}
+
 // UpdateArticle updates an existing article.
 func (uc *ArticleUsecase) UpdateArticle(ctx context.Context, id uint64, input UpdateArticleInput) (*UpdateArticleOutput, error) {
 	article, err := uc.repo.FindByID(ctx, id)

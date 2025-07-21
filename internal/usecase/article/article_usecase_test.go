@@ -271,16 +271,81 @@ func TestArticleUsecase_GetArticles(t *testing.T) {
 }
 
 func TestArticleUsecase_GetArticleByID(t *testing.T) {
+	ctx := context.Background()
 	t.Run("IDで記事を取得", func(t *testing.T) {
-		t.Skip("GetArticleByID method not implemented yet - RED phase")
+		mockRepo := new(MockArticleRepository)
+		uc := article.NewArticleUsecase(mockRepo)
+
+		articleID := uint64(1)
+		title, err := vo.NewArticleTitle("Test Article")
+		require.NoError(t, err)
+		body, err := vo.NewArticleBody(ptr("This is a test article body."))
+		require.NoError(t, err)
+		status := vo.ArticleStatus("draft")
+		providerType, err := vo.NewProviderType(ptr("qiita"))
+		require.NoError(t, err)
+		link, err := vo.NewLink(ptr("https://example.com"))
+		require.NoError(t, err)
+
+		expectedArticle := &entity.Article{
+			ID:           articleID,
+			Title:        title,
+			Body:         body,
+			Status:       status,
+			ProviderType: providerType,
+			Link:         link,
+			CreatedAt:    time.Now(),
+			UpdatedAt:    time.Now(),
+		}
+
+		mockRepo.On("FindByID", ctx, articleID).Return(expectedArticle, nil)
+
+		output, err := uc.FindArticleByID(ctx, articleID)
+
+		assert.NoError(t, err)
+		assert.NotNil(t, output)
+		assert.Equal(t, expectedArticle.ID, output.ID)
+		assert.Equal(t, expectedArticle.Title.String(), output.Title)
+		assert.Equal(t, expectedArticle.Body.String(), output.Body)
+		assert.Equal(t, expectedArticle.Status.String(), output.Status)
+		assert.Equal(t, expectedArticle.ProviderType.String(), output.ProviderType)
+		assert.Equal(t, expectedArticle.Link.String(), output.Link)
+		assert.WithinDuration(t, expectedArticle.CreatedAt, output.CreatedAt, 2*time.Second)
+		assert.WithinDuration(t, expectedArticle.UpdatedAt, output.UpdatedAt, 2*time.Second)
+
+		mockRepo.AssertExpectations(t)
 	})
 
 	t.Run("記事が見つからない場合はエラー", func(t *testing.T) {
-		t.Skip("GetArticleByID method not implemented yet - RED phase")
+		mockRepo := new(MockArticleRepository)
+		uc := article.NewArticleUsecase(mockRepo)
+
+		articleID := uint64(999) // 存在しないID
+		mockRepo.On("FindByID", ctx, articleID).Return(nil, fmt.Errorf("article not found"))
+
+		output, err := uc.FindArticleByID(ctx, articleID)
+
+		assert.Error(t, err)
+		assert.Nil(t, output)
+		assert.Contains(t, err.Error(), "article not found")
+
+		mockRepo.AssertExpectations(t)
 	})
 
 	t.Run("リポジトリエラーは適切に処理される", func(t *testing.T) {
-		t.Skip("GetArticleByID method not implemented yet - RED phase")
+		mockRepo := new(MockArticleRepository)
+		uc := article.NewArticleUsecase(mockRepo)
+
+		articleID := uint64(1)
+		mockRepo.On("FindByID", ctx, articleID).Return(nil, fmt.Errorf("db error"))
+
+		output, err := uc.FindArticleByID(ctx, articleID)
+
+		assert.Error(t, err)
+		assert.Nil(t, output)
+		assert.Contains(t, err.Error(), "db error")
+
+		mockRepo.AssertExpectations(t)
 	})
 }
 

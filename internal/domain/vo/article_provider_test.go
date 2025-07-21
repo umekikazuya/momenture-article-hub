@@ -8,10 +8,6 @@ import (
 	"github.com/umekikazuya/momenture-article-hub/internal/domain/vo"
 )
 
-// NOTE: IsValidの現在の実装 `*pt == &p` は期待通りに動作しない可能性があります。
-// 値の比較 `*pt == p` が意図した動作だと思われますが、テストは現在の実装に基づいて記述します。
-// このテストは、もし実装が修正された場合に失敗するはずです。
-
 func TestNewProviderType(t *testing.T) {
 	t.Parallel()
 
@@ -84,16 +80,7 @@ func TestProviderType_IsValid(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			// HACK: 現在の実装はポインタ比較になっているため、テストのために
-			// 本来の値のセマンティクスとは異なるが、実装に合わせてテストする
-			var isValid bool
-			for _, p := range vo.AllProviderTypes {
-				if tt.pt == p {
-					isValid = true
-					break
-				}
-			}
-			assert.Equal(t, tt.want, isValid)
+			assert.Equal(t, tt.want, tt.pt.IsValid())
 		})
 	}
 }

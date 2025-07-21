@@ -215,7 +215,8 @@ func TestArticle_ChangeProvider(t *testing.T) {
 		originalUpdatedAt := article.UpdatedAt
 		time.Sleep(10 * time.Millisecond)
 
-		err := article.ChangeProvider(vo.ProviderTypeQiita)
+		newProvider := vo.ProviderTypeQiita
+		err := article.ChangeProvider(&newProvider)
 
 		require.NoError(t, err)
 		require.NotNil(t, article.ProviderType)
@@ -226,7 +227,8 @@ func TestArticle_ChangeProvider(t *testing.T) {
 	t.Run("公開済み記事のプロバイダ変更はエラー", func(t *testing.T) {
 		t.Parallel()
 		article, _ := entity.NewArticle("T", string(vo.ArticleStatusPublished))
-		err := article.ChangeProvider(vo.ProviderTypeQiita)
+		newProvider := vo.ProviderTypeQiita
+		err := article.ChangeProvider(&newProvider)
 		assert.Error(t, err)
 	})
 }

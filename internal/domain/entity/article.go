@@ -114,21 +114,37 @@ func ReconstituteArticle(
 	if err != nil {
 		return nil, fmt.Errorf("failed to reconstitute article title: %w", err)
 	}
-	artBody, err := vo.NewArticleBody(body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to reconstitute article body: %w", err)
+
+	var artBody *vo.ArticleBody
+	if body != nil {
+		ab, err := vo.NewArticleBody(body)
+		if err != nil {
+			return nil, fmt.Errorf("failed to reconstitute article body: %w", err)
+		}
+		artBody = ab
 	}
+
 	artStatus := vo.ArticleStatus(status)
 	if !artStatus.IsValid() {
 		return nil, fmt.Errorf("invalid article status for reconstitution: %s", status)
 	}
-	provType, err := vo.NewProviderType(providerType)
-	if err != nil {
-		return nil, fmt.Errorf("failed to reconstitute article provider type: %w", err)
+
+	var provType *vo.ProviderType
+	if providerType != nil {
+		pt, err := vo.NewProviderType(providerType)
+		if err != nil {
+			return nil, fmt.Errorf("failed to reconstitute article provider type: %w", err)
+		}
+		provType = pt
 	}
-	artLink, err := vo.NewLink(link)
-	if err != nil {
-		return nil, fmt.Errorf("failed to reconstitute article link: %w", err)
+
+	var artLink *vo.Link
+	if link != nil {
+		al, err := vo.NewLink(link)
+		if err != nil {
+			return nil, fmt.Errorf("failed to reconstitute article link: %w", err)
+		}
+		artLink = al
 	}
 
 	article := &Article{
@@ -190,11 +206,11 @@ func (a *Article) Restore() error {
 
 // ChangeProvider は記事のプロバイダタイプを変更。
 // 既に公開済みの記事のプロバイダ変更は許可しない。
-func (a *Article) ChangeProvider(newProviderType vo.ProviderType) error {
+func (a *Article) ChangeProvider(newProviderType *vo.ProviderType) error {
 	if a.Status.IsPublished() {
 		return fmt.Errorf("cannot change provider for a published article")
 	}
-	a.ProviderType = &newProviderType
+	a.ProviderType = newProviderType
 	a.UpdatedAt = time.Now()
 	return nil
 }
@@ -235,7 +251,7 @@ func (a *Article) Update(
 		if err != nil {
 			return fmt.Errorf("failed to change provider: %w", err)
 		}
-		if err := a.ChangeProvider(*newProvider); err != nil {
+		if err := a.ChangeProvider(newProvider); err != nil {
 			return fmt.Errorf("failed to change provider: %w", err)
 		}
 		a.ProviderType = newProvider

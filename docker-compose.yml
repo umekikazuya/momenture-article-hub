@@ -13,7 +13,6 @@ services:
     depends_on:
       - article-hub-db
       - article-hub-db-test
-    command: air
     logging:
       driver: "json-file"
       options:

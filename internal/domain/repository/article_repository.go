@@ -11,7 +11,7 @@ type ArticleRepository interface {
 	FindAll(ctx context.Context) ([]*entity.Article, error)
 	FindByID(ctx context.Context, id uint64) (*entity.Article, error)
 	FindByCriteria(ctx context.Context, criteria ArticleQueryCriteria) ([]*entity.Article, int, error)
-	Create(ctx context.Context, article *entity.Article) (uint64, error)
+	Create(ctx context.Context, article *entity.Article) (*entity.Article, error)
 	Update(ctx context.Context, article *entity.Article) error
 	Delete(ctx context.Context, id uint64) error
 }

@@ -34,9 +34,9 @@ func (m *MockArticleRepository) FindByID(ctx context.Context, id uint64) (*entit
 	return args.Get(0).(*entity.Article), args.Error(1)
 }
 
-func (m *MockArticleRepository) Create(ctx context.Context, article *entity.Article) (uint64, error) {
+func (m *MockArticleRepository) Create(ctx context.Context, article *entity.Article) (*entity.Article, error) {
 	args := m.Called(ctx, article)
-	return args.Get(0).(uint64), args.Error(1)
+	return args.Get(0).(*entity.Article), args.Error(1)
 }
 
 func (m *MockArticleRepository) Update(ctx context.Context, article *entity.Article) error {
@@ -70,23 +70,23 @@ func TestArticleUsecase_CreateArticle(t *testing.T) {
 			Status: "draft",
 		}
 
-		mockRepo.On("Create", ctx, mock.AnythingOfType("*entity.Article")).Return(uint64(1), nil).Run(func(args mock.Arguments) {
-			article := args.Get(1).(*entity.Article)
-			assert.Equal(t, input.Title, article.Title.String())
-			assert.Equal(t, input.Status, article.Status.String())
-			assert.WithinDuration(t, time.Now(), article.CreatedAt, 2*time.Second)
-			assert.WithinDuration(t, time.Now(), article.UpdatedAt, 2*time.Second)
-		})
+		createdArticle := &entity.Article{
+			ID:        1,
+			Title:     vo.ArticleTitle("テスト記事タイトル"),
+			Status:    vo.ArticleStatus("draft"),
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		}
+
+		mockRepo.On("Create", ctx, mock.AnythingOfType("*entity.Article")).Return(createdArticle, nil)
 
 		output, err := uc.CreateArticle(ctx, input)
 
 		assert.NoError(t, err)
 		assert.NotNil(t, output)
 		assert.Equal(t, uint64(1), output.ID)
-		assert.NotEqual(t, uint64(0), output.ID)
 		assert.Equal(t, input.Title, output.Title)
-		assert.WithinDuration(t, time.Now(), output.CreatedAt, 2*time.Second)
-		assert.WithinDuration(t, time.Now(), output.UpdatedAt, 2*time.Second)
+		assert.Equal(t, input.Status, output.Status)
 
 		mockRepo.AssertExpectations(t)
 	})
@@ -103,23 +103,37 @@ func TestArticleUsecase_CreateArticle(t *testing.T) {
 			Link:         ptr("https://example.com"),
 		}
 
-		mockRepo.On("Create", ctx, mock.AnythingOfType("*entity.Article")).Return(uint64(2), nil).Run(func(args mock.Arguments) {
-			article := args.Get(1).(*entity.Article)
-			assert.Equal(t, input.Title, article.Title.String())
-			assert.Equal(t, input.Status, article.Status.String())
-			require.NotNil(t, article.Body)
-			assert.Equal(t, *input.Body, article.Body.String())
-			require.NotNil(t, article.ProviderType)
-			assert.Equal(t, vo.ProviderType(*input.ProviderType), *article.ProviderType)
-			require.NotNil(t, article.Link)
-			assert.Equal(t, *input.Link, article.Link.String())
-		})
+		body, err := vo.NewArticleBody(ptr("本文"))
+		require.NoError(t, err)
+		providerType, err := vo.NewProviderType(ptr("qiita"))
+		require.NoError(t, err)
+		link, err := vo.NewLink(ptr("https://example.com"))
+		require.NoError(t, err)
+
+		createdArticle := &entity.Article{
+			ID:           2,
+			Title:        vo.ArticleTitle(input.Title),
+			Body:         body,
+			Status:       vo.ArticleStatus(input.Status),
+			ProviderType: providerType,
+			Link:         link,
+			CreatedAt:    time.Now(),
+			UpdatedAt:    time.Now(),
+		}
+
+		mockRepo.On("Create", ctx, mock.AnythingOfType("*entity.Article")).Return(createdArticle, nil)
 
 		output, err := uc.CreateArticle(ctx, input)
 
 		assert.NoError(t, err)
 		assert.NotNil(t, output)
 		assert.Equal(t, uint64(2), output.ID)
+		assert.Equal(t, input.Title, output.Title)
+		assert.Equal(t, *input.Body, output.Body)
+		assert.Equal(t, input.Status, output.Status)
+		assert.Equal(t, *input.ProviderType, output.ProviderType)
+		assert.Equal(t, *input.Link, output.Link)
+		assert.WithinDuration(t, createdArticle.CreatedAt, output.CreatedAt, 2*time.Second)
 
 		mockRepo.AssertExpectations(t)
 	})
@@ -157,22 +171,37 @@ func TestArticleUsecase_CreateArticle(t *testing.T) {
 		mockRepo.AssertNotCalled(t, "Create")
 	})
 
-	t.Run("本文が空文字列の場合はBodyはnil", func(t *testing.T) {
+	t.Run("本文が空文字列で入力された場合の本文の返り値は空文字", func(t *testing.T) {
 		mockRepo := new(MockArticleRepository)
 		uc := article.NewArticleUsecase(mockRepo)
 
 		input := article.CreateArticleInput{
-			Title:  "Valid Title",
-			Body:   ptr(""),
-			Status: "draft",
+			Title:        "Valid Title",
+			Body:         ptr(""),
+			Status:       "draft",
+			ProviderType: ptr("qiita"),
+			Link:         ptr("https://example.com"),
 		}
 
-		mockRepo.On("Create", ctx, mock.AnythingOfType("*entity.Article")).Return(uint64(3), nil).Run(func(args mock.Arguments) {
-			article := args.Get(1).(*entity.Article)
-			assert.Equal(t, input.Title, article.Title.String())
-			assert.Equal(t, input.Status, article.Status.String())
-			assert.Nil(t, article.Body)
-		})
+		body, err := vo.NewArticleBody(ptr(""))
+		require.NoError(t, err)
+		providerType, err := vo.NewProviderType(ptr("qiita"))
+		require.NoError(t, err)
+		link, err := vo.NewLink(ptr("https://example.com"))
+		require.NoError(t, err)
+
+		createdArticle := &entity.Article{
+			ID:           3,
+			Title:        vo.ArticleTitle(input.Title),
+			Body:         body,
+			Status:       vo.ArticleStatus(input.Status),
+			ProviderType: providerType,
+			Link:         link,
+			CreatedAt:    time.Now(),
+			UpdatedAt:    time.Now(),
+		}
+
+		mockRepo.On("Create", ctx, mock.AnythingOfType("*entity.Article")).Return(createdArticle, nil)
 
 		// When
 		output, err := uc.CreateArticle(ctx, input)
@@ -181,6 +210,61 @@ func TestArticleUsecase_CreateArticle(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotNil(t, output)
 		assert.Equal(t, uint64(3), output.ID)
+		assert.Equal(t, input.Title, output.Title)
+		assert.Equal(t, *input.Body, output.Body)
+		assert.Equal(t, input.Status, output.Status)
+		assert.Equal(t, *input.ProviderType, output.ProviderType)
+		assert.Equal(t, *input.Link, output.Link)
+		assert.WithinDuration(t, createdArticle.CreatedAt, output.CreatedAt, 2*time.Second)
+
+		mockRepo.AssertExpectations(t)
+	})
+
+	t.Run("本文がnilで入力された場合の本文の返り値は空文字", func(t *testing.T) {
+		mockRepo := new(MockArticleRepository)
+		uc := article.NewArticleUsecase(mockRepo)
+
+		input := article.CreateArticleInput{
+			Title:        "Valid Title",
+			Body:         nil,
+			Status:       "draft",
+			ProviderType: ptr("qiita"),
+			Link:         ptr("https://example.com"),
+		}
+
+		body, err := vo.NewArticleBody(ptr(""))
+		require.NoError(t, err)
+		providerType, err := vo.NewProviderType(ptr("qiita"))
+		require.NoError(t, err)
+		link, err := vo.NewLink(ptr("https://example.com"))
+		require.NoError(t, err)
+
+		createdArticle := &entity.Article{
+			ID:           3,
+			Title:        vo.ArticleTitle(input.Title),
+			Body:         body,
+			Status:       vo.ArticleStatus(input.Status),
+			ProviderType: providerType,
+			Link:         link,
+			CreatedAt:    time.Now(),
+			UpdatedAt:    time.Now(),
+		}
+
+		mockRepo.On("Create", ctx, mock.AnythingOfType("*entity.Article")).Return(createdArticle, nil)
+
+		// When
+		output, err := uc.CreateArticle(ctx, input)
+
+		// Then
+		assert.NoError(t, err)
+		assert.NotNil(t, output)
+		assert.Equal(t, uint64(3), output.ID)
+		assert.Equal(t, input.Title, output.Title)
+		assert.Equal(t, "", output.Body)
+		assert.Equal(t, input.Status, output.Status)
+		assert.Equal(t, *input.ProviderType, output.ProviderType)
+		assert.Equal(t, *input.Link, output.Link)
+		assert.WithinDuration(t, createdArticle.CreatedAt, output.CreatedAt, 2*time.Second)
 
 		mockRepo.AssertExpectations(t)
 	})
@@ -228,7 +312,7 @@ func TestArticleUsecase_CreateArticle(t *testing.T) {
 		}
 
 		dbError := fmt.Errorf("db error")
-		mockRepo.On("Create", ctx, mock.AnythingOfType("*entity.Article")).Return(uint64(0), dbError)
+		mockRepo.On("Create", ctx, mock.AnythingOfType("*entity.Article")).Return((*entity.Article)(nil), dbError)
 
 		output, err := uc.CreateArticle(ctx, input)
 

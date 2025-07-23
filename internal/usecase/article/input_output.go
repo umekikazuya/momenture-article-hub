@@ -2,7 +2,7 @@ package article
 
 import "time"
 
-// GetArticlesInput is the input for retrieving articles.
+// FindByCriteriaInput is the input for retrieving articles by criteria.
 type FindByCriteriaInput struct {
 	Status       *string `json:"status" validate:"omitempty,oneof=draft published"`
 	ProviderType *string `json:"provider_type" validate:"omitempty"`

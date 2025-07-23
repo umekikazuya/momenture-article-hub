@@ -88,20 +88,20 @@ func (uc *ArticleUsecase) CreateArticle(ctx context.Context, input CreateArticle
 		return nil, err
 	}
 
-	id, err := uc.repo.Create(ctx, articleEntity)
+	newArticle, err := uc.repo.Create(ctx, articleEntity)
 	if err != nil {
 		return nil, err
 	}
 
 	return &CreateArticleOutput{
-		ID:           id,
-		Title:        articleEntity.Title.String(),
-		Body:         articleEntity.Body.String(),
-		Status:       articleEntity.Status.String(),
-		ProviderType: articleEntity.ProviderType.String(),
-		Link:         articleEntity.Link.String(),
-		CreatedAt:    articleEntity.CreatedAt,
-		UpdatedAt:    articleEntity.UpdatedAt,
+		ID:           newArticle.ID,
+		Title:        newArticle.Title.String(),
+		Body:         newArticle.Body.String(),
+		Status:       newArticle.Status.String(),
+		ProviderType: newArticle.ProviderType.String(),
+		Link:         newArticle.Link.String(),
+		CreatedAt:    newArticle.CreatedAt,
+		UpdatedAt:    newArticle.UpdatedAt,
 	}, nil
 }
 
@@ -165,9 +165,6 @@ func (uc *ArticleUsecase) DeleteArticle(ctx context.Context, id uint64) error {
 	entity, err := uc.repo.FindByID(ctx, id)
 	if err != nil {
 		return err
-	}
-	if entity == nil {
-		return fmt.Errorf("article not found: %d", id)
 	}
 	return uc.repo.Delete(ctx, entity.ID)
 }

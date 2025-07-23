@@ -324,7 +324,7 @@ func TestArticleUsecase_CreateArticle(t *testing.T) {
 	})
 }
 
-func TestArticleUsecase_GetArticles(t *testing.T) {
+func TestArticleUsecase_FindArticles(t *testing.T) {
 	t.Run("全ての記事をページネーションなしで取得", func(t *testing.T) {
 		mockRepo := new(MockArticleRepository)
 		uc := article.NewArticleUsecase(mockRepo)
@@ -517,7 +517,7 @@ func TestArticleUsecase_GetArticles(t *testing.T) {
 	})
 }
 
-func TestArticleUsecase_GetArticleByID(t *testing.T) {
+func TestArticleUsecase_FindArticleByID(t *testing.T) {
 	ctx := context.Background()
 	t.Run("IDで記事を取得", func(t *testing.T) {
 		mockRepo := new(MockArticleRepository)

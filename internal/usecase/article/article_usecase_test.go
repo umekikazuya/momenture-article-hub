@@ -340,8 +340,14 @@ func TestArticleUsecase_GetArticles(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.NotNil(t, output)
-		assert.Len(t, output, len(expectedArticles))
-		assert.Equal(t, int64(len(expectedArticles)), int64(len(output)))
+		assert.Equal(t, len(output.Articles), len(expectedArticles))
+		for i, article := range output.Articles {
+			assert.Equal(t, expectedArticles[i].ID, article.ID)
+			assert.Equal(t, expectedArticles[i].Title.String(), article.Title)
+			assert.Equal(t, expectedArticles[i].Status.String(), article.Status)
+			assert.WithinDuration(t, expectedArticles[i].CreatedAt, article.CreatedAt, 2*time.Second)
+			assert.WithinDuration(t, expectedArticles[i].UpdatedAt, article.UpdatedAt, 2*time.Second)
+		}
 	})
 
 	t.Run("ステータスでフィルタリング", func(t *testing.T) {

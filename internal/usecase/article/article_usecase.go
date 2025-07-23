@@ -19,12 +19,33 @@ func NewArticleUsecase(repo repository.ArticleRepository) *ArticleUsecase {
 }
 
 // FindAllArticles retrieves all articles.
-func (uc *ArticleUsecase) FindAllArticles(ctx context.Context) ([]*entity.Article, error) {
+func (uc *ArticleUsecase) FindAllArticles(ctx context.Context) (*FindByCriteriaOutput, error) {
 	articles, err := uc.repo.FindAll(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to find all articles: %w", err)
 	}
-	return articles, nil
+
+	var articleOutputs []FindArticleByIDOutput
+	for _, article := range articles {
+		articleOutputs = append(articleOutputs, FindArticleByIDOutput{
+			ID:           article.ID,
+			Title:        article.Title.String(),
+			Body:         article.Body.String(),
+			Status:       article.Status.String(),
+			ProviderType: article.ProviderType.String(),
+			Link:         article.Link.String(),
+			CreatedAt:    article.CreatedAt,
+			UpdatedAt:    article.UpdatedAt,
+		})
+	}
+
+	return &FindByCriteriaOutput{
+		Articles:   articleOutputs,
+		Total:      int64(len(articleOutputs)),
+		Page:       1,
+		Limit:      len(articleOutputs),
+		TotalPages: 1,
+	}, nil
 }
 
 // FindByCriteria retrieves articles based on the given criteria.

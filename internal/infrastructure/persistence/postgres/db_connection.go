@@ -40,7 +40,5 @@ func NewPostgreSQLDB(cfg *config.DatabaseConfig) (*gorm.DB, error) {
 	if err = sqlDB.Ping(); err != nil {
 		return nil, fmt.Errorf("failed to ping database: %w", err)
 	}
-
-	fmt.Println("Successfully connected to the database!")
 	return db, nil
 }

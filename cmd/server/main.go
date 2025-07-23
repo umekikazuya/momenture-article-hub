@@ -12,14 +12,13 @@ import (
 func main() {
 	config, err := config.LoadConfig("./.env")
 	if err != nil {
-		log.Fatal("Failed to load configuration")
+		log.Fatal("Failed to load configuration:", err)
 	}
-	// データベース接続。
-	db, err := postgres.NewPostgreSQLDB(&config.Database)
+	// データベース接続
+	_, err = postgres.NewPostgreSQLDB(&config.Database)
 	if err != nil {
-		log.Fatal("Failed to connect to database")
+		log.Fatal("Failed to connect to database:", err)
 	}
-	fmt.Println("Database connection established successfully:", db)
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "Hello World!")
 	})

@@ -62,11 +62,9 @@ func LoadConfig(envFilePath string) (*Config, error) {
 		config.Database.Name = dbName
 	}
 
-	if config.Database.Host == "" || config.Database.User == "" || config.Database.Password == "" || config.Database.Name == "" {
+	if config.Database.Host == "" || config.Database.Port == "" || config.Database.User == "" || config.Database.Password == "" || config.Database.Name == "" {
 		return nil, fmt.Errorf("database connection parameters are incomplete in config")
 	}
-
-	fmt.Println(config)
 
 	return &config, nil
 }

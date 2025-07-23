@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/spf13/viper"
@@ -64,6 +65,15 @@ func LoadConfig(envFilePath string) (*Config, error) {
 
 	if config.Database.Host == "" || config.Database.Port == "" || config.Database.User == "" || config.Database.Password == "" || config.Database.Name == "" {
 		return nil, fmt.Errorf("database connection parameters are incomplete in config")
+	}
+
+	// データベースのPortを検証
+	validPort, err := strconv.Atoi(config.Database.Port)
+	if err != nil {
+		return nil, fmt.Errorf("invalid database port: %s", config.Database.Port)
+	}
+	if validPort <= 0 || validPort > 65535 {
+		return nil, fmt.Errorf("database port must be between 1 and 65535: %d", validPort)
 	}
 
 	return &config, nil

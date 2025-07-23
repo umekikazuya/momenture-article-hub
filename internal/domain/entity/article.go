@@ -7,23 +7,22 @@ import (
 	"github.com/umekikazuya/momenture-article-hub/internal/domain/vo"
 )
 
-// 記事コンテンツのドメインエンティティ。
+// Article は記事のドメインエンティティ
 type Article struct {
-	ID           uint64           // 記事のユニークID (永続化時に払い出される)
-	Title        vo.ArticleTitle  // 記事タイトル
-	Body         *vo.ArticleBody  // 記事本文
-	Status       vo.ArticleStatus // 記事ステータス
-	ProviderType *vo.ProviderType // 投稿先プロバイダ
-	Link         *vo.Link         // 外部URL
-	CreatedAt    time.Time        // 作成日時
-	UpdatedAt    time.Time        // 更新日時
-	DeletedAt    *time.Time       // 論理削除日時
+	ID           uint64
+	Title        vo.ArticleTitle
+	Body         *vo.ArticleBody
+	Status       vo.ArticleStatus
+	ProviderType *vo.ProviderType
+	Link         *vo.Link
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+	DeletedAt    *time.Time
 }
 
-// 記事の属性を更新するためFunctional Optionパターンを使用。
+// ArticleOption は記事作成時のオプション設定用
 type ArticleOption func(*Article) error
 
-// オプション関数。
 func WithBody(body *string) ArticleOption {
 	return func(a *Article) error {
 		b, err := vo.NewArticleBody(body)
@@ -35,7 +34,6 @@ func WithBody(body *string) ArticleOption {
 	}
 }
 
-// オプション関数。
 func WithLink(link *string) ArticleOption {
 	return func(a *Article) error {
 		l, err := vo.NewLink(link)
@@ -47,7 +45,6 @@ func WithLink(link *string) ArticleOption {
 	}
 }
 
-// オプション関数。
 func WithProviderType(providerType *string) ArticleOption {
 	return func(a *Article) error {
 		pt, err := vo.NewProviderType(providerType)
@@ -59,14 +56,12 @@ func WithProviderType(providerType *string) ArticleOption {
 	}
 }
 
-// Factory Method.
-// 新しいArticleエンティティを生成する。
+// NewArticle は新しい記事を作成する
 func NewArticle(
 	title string,
 	status string,
 	opts ...ArticleOption,
 ) (*Article, error) {
-	// 必須フィールドの検証と組み立て。
 	artTitle, err := vo.NewArticleTitle(title)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create article title: %w", err)
@@ -85,7 +80,6 @@ func NewArticle(
 		DeletedAt: nil,
 	}
 
-	// Functional Optionの適用
 	for _, opt := range opts {
 		if err := opt(article); err != nil {
 			return nil, fmt.Errorf("failed to apply article option: %w", err)
@@ -95,10 +89,7 @@ func NewArticle(
 	return article, nil
 }
 
-// Factory Method.
-// データベースなどから読み込んだ既存のArticleエンティティを再構築。
-// - IDとタイムスタンプは既に存在するものとして受け取る。
-// - 永続化層（リポジトリ実装）からのみ呼び出されることを想定。
+// ReconstituteArticle は永続化層から読み込んだデータから記事を再構築する
 func ReconstituteArticle(
 	id uint64,
 	title string,
@@ -159,11 +150,11 @@ func ReconstituteArticle(
 		DeletedAt:    deletedAt,
 	}
 
-	// 全てのフィールドが引数で提供される前提のためFunctional Optionは使わない。
+	// 全てのフィールドが引数で提供される前提
 	return article, nil
 }
 
-// 記事のステータスを公開済みに変更。
+// Publish は記事を公開状態に変更する
 func (a *Article) Publish() error {
 	if a.Status.IsPublished() {
 		return fmt.Errorf("article is already published")
@@ -173,7 +164,7 @@ func (a *Article) Publish() error {
 	return nil
 }
 
-// 記事のステータスを下書きに変更。
+// Draft は記事を下書き状態に変更する
 func (a *Article) Draft() error {
 	if a.Status.IsDraft() {
 		return fmt.Errorf("article is already in draft status")
@@ -183,7 +174,7 @@ func (a *Article) Draft() error {
 	return nil
 }
 
-// 記事を論理削除。
+// SoftDelete は記事を論理削除する
 func (a *Article) SoftDelete() error {
 	if a.DeletedAt != nil {
 		return fmt.Errorf("article is already soft deleted")
@@ -194,7 +185,7 @@ func (a *Article) SoftDelete() error {
 	return nil
 }
 
-// 論理削除された記事を復元。
+// Restore は論理削除された記事を復元する
 func (a *Article) Restore() error {
 	if a.DeletedAt == nil {
 		return fmt.Errorf("article is not soft deleted")
@@ -204,8 +195,8 @@ func (a *Article) Restore() error {
 	return nil
 }
 
-// ChangeProvider は記事のプロバイダタイプを変更。
-// 既に公開済みの記事のプロバイダ変更は許可しない。
+// ChangeProvider は記事のプロバイダを変更する
+// 公開済みの記事は変更不可
 func (a *Article) ChangeProvider(newProviderType *vo.ProviderType) error {
 	if a.Status.IsPublished() {
 		return fmt.Errorf("cannot change provider for a published article")
@@ -215,7 +206,7 @@ func (a *Article) ChangeProvider(newProviderType *vo.ProviderType) error {
 	return nil
 }
 
-// Articleの属性を更新する。
+// Update は記事の属性を更新する
 func (a *Article) Update(
 	title *string,
 	body *string,

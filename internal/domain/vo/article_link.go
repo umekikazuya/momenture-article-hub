@@ -5,12 +5,9 @@ import (
 	"net/url"
 )
 
-// ValueObject - Link.
-// 外部リンクを表す。
-// 有効なURL形式(RFC準拠)
+// Link は記事の外部リンクを表すValue Object
 type Link string
 
-// NewLink は新しいLink値オブジェクトを生成する。
 func NewLink(value *string) (*Link, error) {
 	if value == nil {
 		return nil, nil
@@ -23,14 +20,11 @@ func NewLink(value *string) (*Link, error) {
 	return &link, nil
 }
 
-// isValid はリンクの値が有効かどうかを検証する。
 func isValid(value *string) error {
-	// 空文字列は許容しない。
 	if len(*value) == 0 {
 		return fmt.Errorf("link cannot be empty")
 	}
 
-	// URLのパースと検証。
 	_, err := url.ParseRequestURI(*value)
 	if err != nil {
 		return fmt.Errorf("invalid URL format: %w", err)
@@ -39,7 +33,9 @@ func isValid(value *string) error {
 	return nil
 }
 
-// String はLinkの文字列表現（URL）を返す。
 func (l *Link) String() string {
+	if l == nil {
+		return ""
+	}
 	return string(*l)
 }

@@ -5,9 +5,9 @@ CREATE TABLE public.articles (
   status VARCHAR(20) NOT NULL,
   provider_type VARCHAR(50) NULL,
   link VARCHAR(255) NULL,
-  created_at TIMESTAMP WITHOUT TIME ZONE NULL DEFAULT NOW(),
-  updated_at TIMESTAMP WITHOUT TIME ZONE NULL DEFAULT NOW(),
-  deleted_at TIMESTAMP WITHOUT TIME ZONE NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  deleted_at TIMESTAMPTZ NULL,
 
   CONSTRAINT articles_pkey PRIMARY KEY (id),
   CONSTRAINT articles_status_check CHECK (status IN ('draft', 'published')),

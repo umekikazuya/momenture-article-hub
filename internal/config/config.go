@@ -2,7 +2,6 @@ package config
 
 import (
 	"fmt"
-	"os"
 	"strconv"
 	"strings"
 
@@ -25,42 +24,32 @@ type DatabaseConfig struct {
 }
 
 func LoadConfig(envFilePath string) (*Config, error) {
-	viper.SetConfigFile(envFilePath)
+	// 環境変数の自動読み込みを有効化
 	viper.AutomaticEnv()
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
-	if err := viper.ReadInConfig(); err != nil {
-		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-			fmt.Printf("Config file not found: %s. Relying on environment variables.\n", envFilePath)
-		} else {
-			return nil, fmt.Errorf("failed to read config file: %w", err)
+	// .envファイルの読み込み設定
+	if envFilePath != "" {
+		viper.SetConfigFile(envFilePath)
+		viper.SetConfigType("env")
+		if err := viper.ReadInConfig(); err != nil {
+			if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+				fmt.Printf("Config file not found: %s. Relying on environment variables.\n", envFilePath)
+			} else {
+				return nil, fmt.Errorf("failed to read config file: %w", err)
+			}
 		}
 	}
 
-	// Config Structへのマッピング
+	// 環境変数から設定を構築
 	var config Config
 	if err := viper.Unmarshal(&config); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal config: %w", err)
 	}
 
-	// 環境変数からの上書き
-	if appEnv := os.Getenv("APP_ENV"); appEnv != "" {
-		config.AppEnv = appEnv
-	}
-	if dbHost := os.Getenv("POSTGRES_HOST"); dbHost != "" {
-		config.Database.Host = dbHost
-	}
-	if dbPort := os.Getenv("POSTGRES_EXTERNAL_PORT"); dbPort != "" {
-		config.Database.Port = dbPort
-	}
-	if dbUser := os.Getenv("POSTGRES_USER"); dbUser != "" {
-		config.Database.User = dbUser
-	}
-	if dbPassword := os.Getenv("POSTGRES_PASSWORD"); dbPassword != "" {
-		config.Database.Password = dbPassword
-	}
-	if dbName := os.Getenv("POSTGRES_DB"); dbName != "" {
-		config.Database.Name = dbName
+	// ネストした構造体を個別にUnmarshal
+	if err := viper.Unmarshal(&config.Database); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal database config: %w", err)
 	}
 
 	if config.Database.Host == "" || config.Database.Port == "" || config.Database.User == "" || config.Database.Password == "" || config.Database.Name == "" {

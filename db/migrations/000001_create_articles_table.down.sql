@@ -1,1 +1,1 @@
--- テーブルを削除DROP TABLE IF EXISTS public.articles;
+DROP TABLE IF EXISTS public.articles;

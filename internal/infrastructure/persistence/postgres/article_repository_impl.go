@@ -9,7 +9,6 @@ import (
 )
 
 type PostgresArticleRepository struct {
-	// DB connection or ORM instance can be added here
 }
 
 func NewPostgresArticleRepository() repository.ArticleRepository {

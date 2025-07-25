@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/umekikazuya/momenture-article-hub/internal/config"
-	"github.com/umekikazuya/momenture-article-hub/internal/infrastructure/persistence/postgres"
+	"github.com/umekikazuya/momenture-article-hub/internal/infrastructure/persistence"
 )
 
 func main() {
@@ -15,7 +15,7 @@ func main() {
 		log.Fatal("Failed to load configuration:", err)
 	}
 	// データベース接続
-	_, err = postgres.NewPostgreSQLDB(&config.Database)
+	_, err = persistence.NewPostgreSQLDB(&config.Database)
 	if err != nil {
 		log.Fatal("Failed to connect to database:", err)
 	}

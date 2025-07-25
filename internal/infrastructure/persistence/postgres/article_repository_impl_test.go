@@ -12,6 +12,7 @@ import (
 	"github.com/umekikazuya/momenture-article-hub/internal/config"
 	"github.com/umekikazuya/momenture-article-hub/internal/domain/entity"
 	"github.com/umekikazuya/momenture-article-hub/internal/domain/repository"
+	"github.com/umekikazuya/momenture-article-hub/internal/infrastructure/persistence"
 	"gorm.io/gorm"
 )
 
@@ -26,7 +27,7 @@ func TestMain(m *testing.M) {
 		Name:     os.Getenv("POSTGRES_DB_TEST"),
 	}
 	var err error
-	testDB, err = persistence.NewPostgreSQLDB(cfg) // NewPostgreSQLDB関数はエラー処理も含む
+	testDB, err = persistence.NewPostgreSQLDB(cfg)
 	if err != nil {
 		log.Fatalf("Failed to connect to test database: %v", err)
 	}

@@ -4,9 +4,21 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+
+	"github.com/umekikazuya/momenture-article-hub/internal/config"
+	"github.com/umekikazuya/momenture-article-hub/internal/infrastructure/persistence/postgres"
 )
 
 func main() {
+	config, err := config.LoadConfig("./.env")
+	if err != nil {
+		log.Fatal("Failed to load configuration:", err)
+	}
+	// データベース接続
+	_, err = postgres.NewPostgreSQLDB(&config.Database)
+	if err != nil {
+		log.Fatal("Failed to connect to database:", err)
+	}
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "Hello World!")
 	})

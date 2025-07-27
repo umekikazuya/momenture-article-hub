@@ -12,6 +12,10 @@ func NewLink(value *string) (*Link, error) {
 	if value == nil {
 		return nil, nil
 	}
+	// 空文字の場合、nilを返す
+	if *value == "" {
+		return nil, nil
+	}
 	err := isValid(value)
 	if err != nil {
 		return nil, fmt.Errorf("invalid link: %w", err)
@@ -21,10 +25,6 @@ func NewLink(value *string) (*Link, error) {
 }
 
 func isValid(value *string) error {
-	if len(*value) == 0 {
-		return fmt.Errorf("link cannot be empty")
-	}
-
 	_, err := url.ParseRequestURI(*value)
 	if err != nil {
 		return fmt.Errorf("invalid URL format: %w", err)

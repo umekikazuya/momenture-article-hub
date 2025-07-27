@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"gorm.io/gorm"
@@ -55,16 +56,22 @@ func (r *PostgresArticleRepository) toModel(article *entity.Article) *ArticleMod
 	if article.Body != nil {
 		body := article.Body.String()
 		model.Body = &body
+	} else {
+		model.Body = nil
 	}
 
 	if article.ProviderType != nil {
 		providerType := article.ProviderType.String()
 		model.ProviderType = &providerType
+	} else {
+		model.ProviderType = nil
 	}
 
 	if article.Link != nil {
 		link := article.Link.String()
 		model.Link = &link
+	} else {
+		model.Link = nil
 	}
 
 	return model
@@ -152,7 +159,7 @@ func (r *PostgresArticleRepository) FindByCriteria(ctx context.Context, criteria
 	// ソート順設定
 	if criteria.SortBy != nil {
 		sortOrder := "ASC"
-		if criteria.SortOrder != nil && *criteria.SortOrder == "DESC" {
+		if criteria.SortOrder != nil && strings.ToUpper(*criteria.SortOrder) == "DESC" {
 			sortOrder = "DESC"
 		}
 		query = query.Order(fmt.Sprintf("%s %s", *criteria.SortBy, sortOrder))

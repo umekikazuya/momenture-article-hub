@@ -221,6 +221,13 @@ func (a *Article) Update(
 		}
 		a.Title = newTitle
 	}
+	if status != nil {
+		newStatus := vo.ArticleStatus(*status)
+		if !newStatus.IsValid() {
+			return fmt.Errorf("invalid status provided for update: %s", *status)
+		}
+		a.Status = newStatus
+	}
 	if body != nil {
 		newBody, err := vo.NewArticleBody(body)
 		if err != nil {
@@ -229,13 +236,6 @@ func (a *Article) Update(
 		a.Body = newBody
 	} else {
 		a.Body = nil
-	}
-	if status != nil {
-		newStatus := vo.ArticleStatus(*status)
-		if !newStatus.IsValid() {
-			return fmt.Errorf("invalid status provided for update: %s", *status)
-		}
-		a.Status = newStatus
 	}
 	if providerType != nil {
 		newProvider, err := vo.NewProviderType(providerType)

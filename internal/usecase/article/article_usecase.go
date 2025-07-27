@@ -133,6 +133,10 @@ func (uc *ArticleUsecase) FindArticleByID(ctx context.Context, id uint64) (*Find
 		return nil, err
 	}
 
+	if article == nil {
+		return nil, fmt.Errorf("article with id %d not found", id)
+	}
+
 	return &FindArticleByIDOutput{
 		ID:           article.ID,
 		Title:        article.Title.String(),

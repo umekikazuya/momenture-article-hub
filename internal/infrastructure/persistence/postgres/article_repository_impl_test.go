@@ -21,7 +21,7 @@ var testDB *gorm.DB
 func TestMain(m *testing.M) {
 	cfg := &config.DatabaseConfig{
 		Host:     os.Getenv("POSTGRES_HOST_TEST"),
-		Port:     os.Getenv("POSTGRES_TEST_EXTERNAL_PORT"),
+		Port:     "5432",
 		User:     os.Getenv("POSTGRES_USER_TEST"),
 		Password: os.Getenv("POSTGRES_PASSWORD_TEST"),
 		Name:     os.Getenv("POSTGRES_DB_TEST"),
@@ -31,7 +31,6 @@ func TestMain(m *testing.M) {
 	if err != nil {
 		log.Fatalf("Failed to connect to test database: %v", err)
 	}
-	// GORMのフックなどで、自動的にDB操作のログが出るように設定することもできる
 
 	// テスト実行
 	code := m.Run()
@@ -59,7 +58,7 @@ func setupTestRepository(t *testing.T) *PostgresArticleRepository {
 	t.Cleanup(func() {
 		tx.Rollback()
 	})
-	return &PostgresArticleRepository{DB: tx}
+	return &PostgresArticleRepository{db: tx}
 }
 
 func TestPostgresArticleRepository_Create_Success_MinimalFields(t *testing.T) {

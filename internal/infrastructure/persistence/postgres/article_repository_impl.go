@@ -10,13 +10,12 @@ import (
 
 	"github.com/umekikazuya/momenture-article-hub/internal/domain/entity"
 	"github.com/umekikazuya/momenture-article-hub/internal/domain/repository"
-	"github.com/umekikazuya/momenture-article-hub/internal/domain/vo"
 )
 
 // ArticleModel はデータベースのarticlesテーブルに対応するモデル
 type ArticleModel struct {
 	ID           uint64     `gorm:"column:id;primaryKey;autoIncrement"`
-	Title        string     `gorm:"column:title;not null;size:255"`
+	Title        string     `gorm:"column:title;not null;size:100"`
 	Body         *string    `gorm:"column:body;type:text"`
 	Status       string     `gorm:"column:status;not null;size:20"`
 	ProviderType *string    `gorm:"column:provider_type;size:50"`
@@ -26,7 +25,7 @@ type ArticleModel struct {
 	DeletedAt    *time.Time `gorm:"column:deleted_at"`
 }
 
-// TableName はテーブル名を指定
+// テーブル名を指定
 func (ArticleModel) TableName() string {
 	return "articles"
 }
@@ -39,61 +38,6 @@ func NewPostgresArticleRepository(db *gorm.DB) repository.ArticleRepository {
 	return &PostgresArticleRepository{db: db}
 }
 
-// toEntity はArticleModelからentity.Articleに変換する
-func (r *PostgresArticleRepository) toEntity(model *ArticleModel) (*entity.Article, error) {
-	if model == nil {
-		return nil, nil
-	}
-
-	// 必須フィールドのバリデーション
-	title, err := vo.NewArticleTitle(model.Title)
-	if err != nil {
-		return nil, err
-	}
-
-	status := vo.ArticleStatus(model.Status)
-	if !status.IsValid() {
-		return nil, fmt.Errorf("invalid article status: %s", model.Status)
-	}
-
-	article := &entity.Article{
-		ID:        model.ID,
-		Title:     title,
-		Status:    status,
-		CreatedAt: model.CreatedAt,
-		UpdatedAt: model.UpdatedAt,
-		DeletedAt: model.DeletedAt,
-	}
-
-	// オプショナルフィールドの設定
-	if model.Body != nil {
-		body, err := vo.NewArticleBody(model.Body)
-		if err != nil {
-			return nil, err
-		}
-		article.Body = body
-	}
-
-	if model.ProviderType != nil {
-		providerType, err := vo.NewProviderType(model.ProviderType)
-		if err != nil {
-			return nil, err
-		}
-		article.ProviderType = providerType
-	}
-
-	if model.Link != nil {
-		link, err := vo.NewLink(model.Link)
-		if err != nil {
-			return nil, err
-		}
-		article.Link = link
-	}
-
-	return article, nil
-}
-
-// toModel はentity.ArticleからArticleModelに変換する
 func (r *PostgresArticleRepository) toModel(article *entity.Article) *ArticleModel {
 	if article == nil {
 		return nil
@@ -126,7 +70,6 @@ func (r *PostgresArticleRepository) toModel(article *entity.Article) *ArticleMod
 	return model
 }
 
-// FindAll は全ての記事を取得する
 func (r *PostgresArticleRepository) FindAll(ctx context.Context) ([]*entity.Article, error) {
 	var models []ArticleModel
 	if err := r.db.WithContext(ctx).Find(&models).Error; err != nil {
@@ -135,7 +78,17 @@ func (r *PostgresArticleRepository) FindAll(ctx context.Context) ([]*entity.Arti
 
 	articles := make([]*entity.Article, 0, len(models))
 	for _, model := range models {
-		article, err := r.toEntity(&model)
+		article, err := entity.ReconstituteArticle(
+			model.ID,
+			model.Title,
+			model.Status,
+			model.Body,
+			model.ProviderType,
+			model.Link,
+			model.CreatedAt,
+			model.UpdatedAt,
+			model.DeletedAt,
+		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to convert model to entity: %w", err)
 		}
@@ -145,7 +98,6 @@ func (r *PostgresArticleRepository) FindAll(ctx context.Context) ([]*entity.Arti
 	return articles, nil
 }
 
-// FindByID は指定されたIDの記事を取得する
 func (r *PostgresArticleRepository) FindByID(ctx context.Context, id uint64) (*entity.Article, error) {
 	var model ArticleModel
 	if err := r.db.WithContext(ctx).Where("id = ?", id).First(&model).Error; err != nil {
@@ -155,7 +107,17 @@ func (r *PostgresArticleRepository) FindByID(ctx context.Context, id uint64) (*e
 		return nil, fmt.Errorf("failed to find article by id %d: %w", id, err)
 	}
 
-	article, err := r.toEntity(&model)
+	article, err := entity.ReconstituteArticle(
+		model.ID,
+		model.Title,
+		model.Status,
+		model.Body,
+		model.ProviderType,
+		model.Link,
+		model.CreatedAt,
+		model.UpdatedAt,
+		model.DeletedAt,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert model to entity: %w", err)
 	}
@@ -163,7 +125,6 @@ func (r *PostgresArticleRepository) FindByID(ctx context.Context, id uint64) (*e
 	return article, nil
 }
 
-// FindByCriteria は指定された条件に一致する記事を取得する
 func (r *PostgresArticleRepository) FindByCriteria(ctx context.Context, criteria repository.ArticleQueryCriteria) ([]*entity.Article, int, error) {
 	query := r.db.WithContext(ctx).Model(&ArticleModel{})
 
@@ -216,7 +177,17 @@ func (r *PostgresArticleRepository) FindByCriteria(ctx context.Context, criteria
 
 	articles := make([]*entity.Article, 0, len(models))
 	for _, model := range models {
-		article, err := r.toEntity(&model)
+		article, err := entity.ReconstituteArticle(
+			model.ID,
+			model.Title,
+			model.Status,
+			model.Body,
+			model.ProviderType,
+			model.Link,
+			model.CreatedAt,
+			model.UpdatedAt,
+			model.DeletedAt,
+		)
 		if err != nil {
 			return nil, 0, fmt.Errorf("failed to convert model to entity: %w", err)
 		}
@@ -226,7 +197,6 @@ func (r *PostgresArticleRepository) FindByCriteria(ctx context.Context, criteria
 	return articles, int(totalCount), nil
 }
 
-// Create は新しい記事を作成する
 func (r *PostgresArticleRepository) Create(ctx context.Context, article *entity.Article) (*entity.Article, error) {
 	if article == nil {
 		return nil, fmt.Errorf("article cannot be nil")
@@ -241,7 +211,17 @@ func (r *PostgresArticleRepository) Create(ctx context.Context, article *entity.
 	}
 
 	// 作成された記事を返すために再度エンティティに変換
-	createdArticle, err := r.toEntity(model)
+	createdArticle, err := entity.ReconstituteArticle(
+		model.ID,
+		model.Title,
+		model.Status,
+		model.Body,
+		model.ProviderType,
+		model.Link,
+		model.CreatedAt,
+		model.UpdatedAt,
+		model.DeletedAt,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert created model to entity: %w", err)
 	}
@@ -249,7 +229,6 @@ func (r *PostgresArticleRepository) Create(ctx context.Context, article *entity.
 	return createdArticle, nil
 }
 
-// Update は既存の記事を更新する
 func (r *PostgresArticleRepository) Update(ctx context.Context, article *entity.Article) error {
 	if article == nil {
 		return fmt.Errorf("article cannot be nil")
@@ -271,7 +250,6 @@ func (r *PostgresArticleRepository) Update(ctx context.Context, article *entity.
 	return nil
 }
 
-// Delete は指定されたIDの記事を論理削除する
 func (r *PostgresArticleRepository) Delete(ctx context.Context, id uint64) error {
 	now := time.Now()
 	result := r.db.WithContext(ctx).Model(&ArticleModel{}).Where("id = ? AND deleted_at IS NULL", id).Update("deleted_at", now)

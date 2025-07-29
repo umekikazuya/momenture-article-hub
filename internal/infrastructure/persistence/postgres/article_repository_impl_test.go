@@ -578,9 +578,9 @@ func TestPostgresArticleRepository_Update_OptionalFieldsCleared(t *testing.T) {
 
 	// オプションフィールドがnilになっていること
 	// デバッグ
-	assert.Nil(t, *foundArticle.Body, "Body should be nil after clearing")
-	assert.Nil(t, *foundArticle.ProviderType)
-	assert.Nil(t, *foundArticle.Link)
+	assert.Nil(t, foundArticle.Body, "Body should be nil after clearing")
+	assert.Nil(t, foundArticle.ProviderType)
+	assert.Nil(t, foundArticle.Link)
 }
 
 func TestPostgresArticleRepository_Delete_LogicalDeletion(t *testing.T) {

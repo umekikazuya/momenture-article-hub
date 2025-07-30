@@ -597,6 +597,7 @@ func TestPostgresArticleRepository_Update_ChangeQiita(t *testing.T) {
 
 	// オプションフィールドをクリアした記事を作成
 	updatedArticle, err := repo.FindByID(ctx, createdArticle.ID)
+	require.NoError(t, err, "Failed to find article by ID")
 	err = updatedArticle.Update(
 		stringPtr("Updated Article Title"),
 		nil,

@@ -314,7 +314,6 @@ func TestPostgresArticleRepository_FindByCriteria_DefaultConditions(t *testing.T
 	ctx := context.Background()
 
 	// 複数の記事を作成
-	articles := []*entity.Article{}
 	for i := 0; i < 3; i++ {
 		article, err := entity.NewArticle(
 			"Test Article "+string(rune('A'+i)),
@@ -324,7 +323,9 @@ func TestPostgresArticleRepository_FindByCriteria_DefaultConditions(t *testing.T
 
 		createdArticle, err := repo.Create(ctx, article)
 		require.NoError(t, err)
-		articles = append(articles, createdArticle)
+		require.NotNil(t, createdArticle)
+		assert.NotZero(t, createdArticle.ID, "Created article should have a valid ID")
+		assert.False(t, createdArticle.CreatedAt.IsZero(), "CreatedAt should not be zero")
 	}
 
 	// When: デフォルト条件でFindByCriteriaを呼び出す
@@ -550,14 +551,15 @@ func TestPostgresArticleRepository_Update_ChangeStatus(t *testing.T) {
 
 	// オプションフィールドをクリアした記事を作成
 	updatedArticle, err := repo.FindByID(ctx, createdArticle.ID)
-	updatedArticle.Update(
+	require.NoError(t, err, "Failed to find article by ID")
+	err = updatedArticle.Update(
 		stringPtr("Updated Article Title"),
 		nil,
 		stringPtr("published"),
 		nil,
 		nil,
 	)
-	require.NoError(t, err)
+	require.NoError(t, err, "Failed to update article")
 
 	// When: Update メソッドを呼び出す
 	err = repo.Update(ctx, updatedArticle)
@@ -595,14 +597,14 @@ func TestPostgresArticleRepository_Update_ChangeQiita(t *testing.T) {
 
 	// オプションフィールドをクリアした記事を作成
 	updatedArticle, err := repo.FindByID(ctx, createdArticle.ID)
-	updatedArticle.Update(
+	err = updatedArticle.Update(
 		stringPtr("Updated Article Title"),
 		nil,
 		stringPtr("published"),
 		nil,
 		stringPtr("https://qiita.com/updated/article"),
 	)
-	require.NoError(t, err)
+	require.NoError(t, err, "Failed to update article")
 
 	// When: Update メソッドを呼び出す
 	err = repo.Update(ctx, updatedArticle)
@@ -645,14 +647,14 @@ func TestPostgresArticleRepository_Update_OptionalFieldsCleared(t *testing.T) {
 	require.NotNil(t, createdArticle, "Created article should not be nil")
 
 	// オプションフィールドをクリア
-	createdArticle.Update(
+	err = createdArticle.Update(
 		stringPtr("Updated Article Title"),
 		stringPtr(""),
 		stringPtr("draft"),
 		stringPtr(""),
 		stringPtr(""),
 	)
-	require.NoError(t, err)
+	require.NoError(t, err, "Failed to update article")
 
 	// When: Update メソッドを呼び出す
 	err = repo.Update(ctx, createdArticle)
@@ -765,7 +767,6 @@ func TestPostgresArticleRepository_FindByCriteria_SortByUpdatedAt(t *testing.T) 
 	ctx := context.Background()
 
 	// 複数の記事を時間差で作成
-	articleIds := []uint64{}
 	for i := 0; i < 3; i++ {
 		article, err := entity.NewArticle(
 			"Test Article "+string(rune('A'+i)),
@@ -775,7 +776,9 @@ func TestPostgresArticleRepository_FindByCriteria_SortByUpdatedAt(t *testing.T) 
 
 		createdArticle, err := repo.Create(ctx, article)
 		require.NoError(t, err)
-		articleIds = append(articleIds, createdArticle.ID)
+		require.NotNil(t, createdArticle)
+		assert.NotZero(t, createdArticle.ID, "Created article should have a valid ID")
+		assert.False(t, createdArticle.CreatedAt.IsZero(), "CreatedAt should not be zero")
 
 		// 時間差を作るため少し待機
 		time.Sleep(10 * time.Millisecond)
@@ -873,6 +876,7 @@ func TestPostgresArticleRepository_FindByCriteria_IncludeDeleted(t *testing.T) {
 		}
 	}
 	assert.False(t, foundDeletedInNormalSearch, "Deleted article should not be found when IncludeDeleted is false")
+	assert.GreaterOrEqual(t, total, 1, "At least one normal article should be found")
 }
 
 func TestPostgresArticleRepository_FindAll_Success(t *testing.T) {

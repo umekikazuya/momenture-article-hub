@@ -34,7 +34,7 @@ func TestNewLink(t *testing.T) {
 		},
 		{
 			name:      "空文字列の場合は作成成功 (nilが返る)",
-			value:     nil,
+			value:     func() *string { s := ""; return &s }(),
 			want:      nil,
 			assertion: assert.NoError,
 		},

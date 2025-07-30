@@ -32,6 +32,11 @@ func TestMain(m *testing.M) {
 		log.Fatalf("Failed to connect to test database: %v", err)
 	}
 
+	// テスト用スキーマ作成
+	if err := testDB.AutoMigrate(&entity.Article{}); err != nil {
+		log.Fatalf("Failed to migrate test database: %v", err)
+	}
+
 	// テスト実行
 	code := m.Run()
 

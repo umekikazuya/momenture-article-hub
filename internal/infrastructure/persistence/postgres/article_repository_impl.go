@@ -109,7 +109,7 @@ func (r *PostgresArticleRepository) FindByID(ctx context.Context, id uint64) (*e
 	var model ArticleModel
 	if err := r.db.WithContext(ctx).Where("id = ?", id).First(&model).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, nil
+			return nil, fmt.Errorf("article not found: %w", gorm.ErrRecordNotFound)
 		}
 		return nil, fmt.Errorf("failed to find article by id %d: %w", id, err)
 	}

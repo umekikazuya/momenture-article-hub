@@ -182,8 +182,8 @@ func TestPostgresArticleRepository_FindByID_NotFound(t *testing.T) {
 	ctx := context.Background()
 	foundArticle, err := repo.FindByID(ctx, 9999)
 
-	// Then: 記事はnilであること
-	assert.NoError(t, err)
+	// Then: エラーが返されること
+	assert.Error(t, err, "Expected error when finding non-existent article")
 	assert.Nil(t, foundArticle)
 }
 

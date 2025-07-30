@@ -241,19 +241,32 @@ func (r *PostgresArticleRepository) Update(ctx context.Context, article *entity.
 		return fmt.Errorf("article cannot be nil")
 	}
 
-	model := r.toModel(article)
-	model.UpdatedAt = time.Now()
+	updates := map[string]interface{}{
+		"title":         article.Title.String(),
+		"status":        article.Status.String(),
+		"updated_at":    time.Now(),
+		"body":          nil,
+		"provider_type": nil,
+		"link":          nil,
+	}
 
-	// IDで検索して更新
-	result := r.db.WithContext(ctx).Model(&ArticleModel{}).Where("id = ?", article.ID).Updates(model)
+	if article.Body != nil {
+		updates["body"] = article.Body.String()
+	}
+	if article.ProviderType != nil {
+		updates["provider_type"] = article.ProviderType.String()
+	}
+	if article.Link != nil {
+		updates["link"] = article.Link.String()
+	}
+
+	result := r.db.WithContext(ctx).Model(&ArticleModel{}).Where("id = ?", article.ID).Updates(updates)
 	if result.Error != nil {
 		return fmt.Errorf("failed to update article: %w", result.Error)
 	}
-
 	if result.RowsAffected == 0 {
 		return fmt.Errorf("article with id %d not found", article.ID)
 	}
-
 	return nil
 }
 

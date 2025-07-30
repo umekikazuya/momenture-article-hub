@@ -46,10 +46,6 @@ func stringPtr(s string) *string {
 	return &s
 }
 
-func timePtr(t time.Time) *time.Time {
-	return &t
-}
-
 func setupTestRepository(t *testing.T) *PostgresArticleRepository {
 	// 各テストの前にトランザクションを開始
 	tx := testDB.Begin()
@@ -575,6 +571,50 @@ func TestPostgresArticleRepository_Update_ChangeStatus(t *testing.T) {
 	assert.Equal(t, "Updated Article Title", foundArticle.Title.String(), "Title should be updated to 'Updated Article Title'")
 }
 
+func TestPostgresArticleRepository_Update_ChangeQiita(t *testing.T) {
+	// Given: リポジトリインスタンスと全フィールドが設定された記事
+	repo := setupTestRepository(t)
+	require.NotNil(t, repo, "Repository should be initialized")
+
+	originalArticle, err := entity.NewArticle(
+		"Article with All Fields",
+		"draft",
+	)
+	require.NoError(t, err, "Failed to create original article")
+
+	ctx := context.Background()
+
+	createdArticle, err := repo.Create(ctx, originalArticle)
+	require.NoError(t, err, "Failed to create article")
+	require.NotNil(t, createdArticle, "Created article should not be nil")
+
+	// オプションフィールドをクリアした記事を作成
+	updatedArticle, err := repo.FindByID(ctx, createdArticle.ID)
+	updatedArticle.Update(
+		stringPtr("Updated Article Title"),
+		nil,
+		stringPtr("published"),
+		nil,
+		stringPtr("https://qiita.com/updated/article"),
+	)
+	require.NoError(t, err)
+
+	// When: Update メソッドを呼び出す
+	err = repo.Update(ctx, updatedArticle)
+
+	// Then: エラーがないこと
+	require.NoError(t, err, "Update should not return an error")
+
+	// データベースから再取得して確認
+	foundArticle, err := repo.FindByID(ctx, createdArticle.ID)
+	require.NoError(t, err, "Failed to find article by ID", err)
+	require.NotNil(t, foundArticle)
+
+	// リンクが更新されていること
+	assert.NotNil(t, foundArticle.Link, "Link should not be nil after update")
+	assert.Equal(t, "https://qiita.com/updated/article", foundArticle.Link.String(), "Link should be updated to 'https://qiita.com/updated/article'")
+}
+
 func TestPostgresArticleRepository_Update_OptionalFieldsCleared(t *testing.T) {
 	// Given: リポジトリインスタンスと全フィールドが設定された記事
 	repo := setupTestRepository(t)
@@ -602,10 +642,10 @@ func TestPostgresArticleRepository_Update_OptionalFieldsCleared(t *testing.T) {
 	// オプションフィールドをクリア
 	createdArticle.Update(
 		stringPtr("Updated Article Title"),
-		nil,
+		stringPtr(""),
 		stringPtr("draft"),
-		nil,
-		nil,
+		stringPtr(""),
+		stringPtr(""),
 	)
 	require.NoError(t, err)
 
@@ -621,9 +661,9 @@ func TestPostgresArticleRepository_Update_OptionalFieldsCleared(t *testing.T) {
 	require.NotNil(t, foundArticle)
 
 	// オプションフィールドがnilになっていること
-	assert.Nil(t, *foundArticle.Body, "Body should be nil after clearing")
-	assert.Nil(t, *foundArticle.ProviderType, "ProviderType should be nil after clearing")
-	assert.Nil(t, *foundArticle.Link, "Link should be nil after clearing")
+	assert.Nil(t, foundArticle.Body, "Body should be nil after clearing")
+	assert.Nil(t, foundArticle.ProviderType, "ProviderType should be nil after clearing")
+	assert.Nil(t, foundArticle.Link, "Link should be nil after clearing")
 }
 
 func TestPostgresArticleRepository_Delete_LogicalDeletion(t *testing.T) {

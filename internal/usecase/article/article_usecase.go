@@ -187,9 +187,9 @@ func (uc *ArticleUsecase) UpdateArticle(ctx context.Context, id uint64, input Up
 
 // DeleteArticle deletes an article by its ID.
 func (uc *ArticleUsecase) DeleteArticle(ctx context.Context, id uint64) error {
-	entity, err := uc.repo.FindByID(ctx, id)
+	articleEntity, err := uc.repo.FindByID(ctx, id)
 	if err != nil {
 		return err
 	}
-	return uc.repo.Delete(ctx, entity.ID)
+	return uc.repo.Delete(ctx, articleEntity.ID)
 }

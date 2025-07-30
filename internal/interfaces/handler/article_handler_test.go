@@ -70,7 +70,7 @@ func newTestServer(mockUsecase *MockArticleUsecase) *gin.Engine {
 	h := handler.NewArticleHandler(mockUsecase)
 
 	r.POST("/articles", h.CreateArticle)
-	r.GET("/articles/:id", h.GetArticleByID)
+	r.GET("/articles/:id", h.FindArticleByID)
 	r.GET("/articles", h.GetArticles)
 	r.PUT("/articles/:id", h.UpdateArticle)
 	r.DELETE("/articles/:id", h.DeleteArticle)

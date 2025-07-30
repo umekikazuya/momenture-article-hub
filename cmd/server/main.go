@@ -1,35 +1,42 @@
 package main
 
 import (
-	"fmt"
 	"log"
-	"net/http"
 
 	"github.com/umekikazuya/momenture-article-hub/internal/config"
 	"github.com/umekikazuya/momenture-article-hub/internal/infrastructure/persistence"
+	"github.com/umekikazuya/momenture-article-hub/internal/infrastructure/persistence/postgres"
+	"github.com/umekikazuya/momenture-article-hub/internal/interfaces/handler"
+	"github.com/umekikazuya/momenture-article-hub/internal/interfaces/router"
+	"github.com/umekikazuya/momenture-article-hub/internal/usecase/article"
 )
 
 func main() {
-	config, err := config.LoadConfig("./.env")
+	cfg, err := config.LoadConfig(".env")
 	if err != nil {
-		log.Fatal("Failed to load configuration:", err)
+		log.Fatalf("Failed to load configuration: %v", err)
 	}
-	// データベース接続
-	_, err = persistence.NewPostgreSQLDB(&config.Database)
+	db, err := persistence.NewPostgreSQLDB(&cfg.Database)
 	if err != nil {
-		log.Fatal("Failed to connect to database:", err)
+		log.Fatalf("Failed to connect to database: %v", err)
 	}
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "Hello World!")
-	})
+	sqlDB, err := db.DB()
+	if err != nil {
+		log.Fatalf("Failed to get underlying sql.DB: %v", err)
+	}
+	defer sqlDB.Close()
 
-	// Health check endpoint
-	http.HandleFunc("/up", func(w http.ResponseWriter, r *http.Request) {
-		log.Println("Health check endpoint hit")
-		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, "OK")
-	})
+	articleRepository := postgres.NewPostgresArticleRepository(db)
 
-	fmt.Printf("Server starting on port %s...\n", "8080")
-	log.Fatal(http.ListenAndServe(":"+"8080", nil))
+	articleUsecase := article.NewArticleUsecase(articleRepository)
+
+	articleHandler := handler.NewArticleHandler(articleUsecase)
+
+	routerConfig := &router.RouterConfig{
+		ArticleHandler: articleHandler,
+	}
+
+	r := router.NewRouter(routerConfig)
+
+	log.Fatal(r.Run(":8080"))
 }

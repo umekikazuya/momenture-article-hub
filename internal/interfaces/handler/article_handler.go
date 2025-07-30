@@ -56,8 +56,8 @@ func (h *ArticleHandler) CreateArticle(c *gin.Context) {
 	c.JSON(http.StatusCreated, articleData)
 }
 
-// GetArticleByID handles fetching a single article by its ID.
-func (h *ArticleHandler) GetArticleByID(c *gin.Context) {
+// FindArticleByID handles fetching a single article by its ID.
+func (h *ArticleHandler) FindArticleByID(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 64)
 	if err != nil {

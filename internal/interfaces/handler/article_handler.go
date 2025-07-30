@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 	"github.com/umekikazuya/momenture-article-hub/internal/usecase/article"
 )
 
@@ -21,20 +22,38 @@ type ArticleUsecase interface {
 
 // ArticleHandler handles HTTP requests related to articles.
 type ArticleHandler struct {
-	usecase ArticleUsecase
+	usecase  ArticleUsecase
+	validate *validator.Validate
 }
 
 // NewArticleHandler creates a new ArticleHandler.
 func NewArticleHandler(usecase ArticleUsecase) *ArticleHandler {
 	return &ArticleHandler{
-		usecase: usecase,
+		usecase:  usecase,
+		validate: validator.New(),
 	}
 }
 
 // CreateArticle handles the creation of a new article.
 func (h *ArticleHandler) CreateArticle(c *gin.Context) {
-	// This is a dummy implementation for TDD.
-	c.JSON(http.StatusNotImplemented, gin.H{"error": "Not Implemented"})
+	var input article.CreateArticleInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		return
+	}
+
+	if err := h.validate.Struct(input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	articleData, err := h.usecase.CreateArticle(c.Request.Context(), input)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, articleData)
 }
 
 // GetArticleByID handles fetching a single article by its ID.
@@ -70,26 +89,22 @@ func (h *ArticleHandler) GetArticleByID(c *gin.Context) {
 // GetArticles handles fetching a list of articles based on query parameters.
 func (h *ArticleHandler) GetArticles(c *gin.Context) {
 	var input article.FindByCriteriaInput
-
-	pageStr := c.DefaultQuery("page", "1")
-	limitStr := c.DefaultQuery("limit", "10")
-
-	page, err := strconv.Atoi(pageStr)
-	if err != nil || page <= 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid page parameter"})
+	if err := c.ShouldBindQuery(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid query parameters"})
 		return
 	}
-	input.Page = page
 
-	limit, err := strconv.Atoi(limitStr)
-	if err != nil || limit <= 0 || limit > 100 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid limit parameter"})
-		return
+	// Set defaults for pagination
+	if input.Page == 0 {
+		input.Page = 1
 	}
-	input.Limit = limit
+	if input.Limit == 0 {
+		input.Limit = 10
+	}
 
-	if status, ok := c.GetQuery("status"); ok {
-		input.Status = &status
+	if err := h.validate.Struct(input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
 	}
 
 	articles, err := h.usecase.FindByCriteria(c.Request.Context(), input)
@@ -116,9 +131,8 @@ func (h *ArticleHandler) UpdateArticle(c *gin.Context) {
 		return
 	}
 
-	// Manual validation for status field
-	if input.Status != nil && *input.Status == "invalid" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid status value"})
+	if err := h.validate.Struct(input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 

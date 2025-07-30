@@ -30,6 +30,28 @@ jobs:
   # テスト
   test:
     runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: test_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    env:
+      POSTGRES_HOST_TEST: localhost
+      POSTGRES_USER_TEST: test_user
+      POSTGRES_PASSWORD_TEST: test_password
+      POSTGRES_DB_TEST: test_db
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4

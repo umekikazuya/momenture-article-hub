@@ -33,10 +33,10 @@ func TestNewLink(t *testing.T) {
 			assertion: assert.Error,
 		},
 		{
-			name:      "空文字列の場合はエラー",
+			name:      "空文字列の場合は作成成功 (nilが返る)",
 			value:     func() *string { s := ""; return &s }(),
 			want:      nil,
-			assertion: assert.Error,
+			assertion: assert.NoError,
 		},
 		{
 			name:      "nilの場合は作成成功 (nilが返る)",

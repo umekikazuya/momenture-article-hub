@@ -647,14 +647,14 @@ func TestArticleUsecase_UpdateArticle(t *testing.T) {
 		mockRepo.AssertExpectations(t)
 	})
 
-	t.Run("オプションフィールドをクリア", func(t *testing.T) {
+	t.Run("オプションフィールドをnil入力でクリア", func(t *testing.T) {
 		mockRepo := new(MockArticleRepository)
 		uc := article.NewArticleUsecase(mockRepo)
 
 		input := article.UpdateArticleInput{
-			Body:         ptr(""),
-			ProviderType: nil, // 空文字列ではなくnilでクリア
-			Link:         nil, // 空文字列ではなくnilでクリア
+			Body:         nil,
+			ProviderType: nil,
+			Link:         nil,
 		}
 
 		// 既存の記事を作成（オプションフィールド付き）
@@ -677,6 +677,37 @@ func TestArticleUsecase_UpdateArticle(t *testing.T) {
 		assert.Empty(t, output.ProviderType)
 		assert.Empty(t, output.Link)
 		mockRepo.AssertExpectations(t)
+	})
+
+	t.Run("オプションフィールドを空文字入力でクリア", func(t *testing.T) {
+		mockRepo := new(MockArticleRepository)
+		uc := article.NewArticleUsecase(mockRepo)
+
+		input := article.UpdateArticleInput{
+			Body:         ptr(""),
+			ProviderType: ptr(""),
+			Link:         ptr(""),
+		}
+
+		// 既存の記事を作成（オプションフィールド付き）
+		existingArticle, err := entity.NewArticle("Original Title", "draft",
+			entity.WithBody(ptr("Original Body")),
+			entity.WithProviderType(ptr("qiita")),
+			entity.WithLink(ptr("https://original.com")),
+		)
+		require.NoError(t, err)
+		existingArticle.ID = 1
+
+		mockRepo.On("FindByID", ctx, uint64(1)).Return(existingArticle, nil)
+		mockRepo.On("Update", ctx, mock.AnythingOfType("*entity.Article")).Return(nil)
+
+		output, err := uc.UpdateArticle(ctx, 1, input)
+
+		assert.NoError(t, err)
+		assert.NotNil(t, output)
+		assert.Empty(t, output.Body)
+		assert.Empty(t, output.ProviderType)
+		assert.Empty(t, output.Link)
 	})
 
 	t.Run("記事が見つからない場合はエラー", func(t *testing.T) {

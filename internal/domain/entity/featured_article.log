@@ -1,0 +1,29 @@
+func TestNewFeaturedArticle(t *testing.T) {
+	t.Parallel()
+
+	t.Run("有効な属性で作成成功", func(t *testing.T) {
+		t.Parallel()
+		articleID := int64(123)
+		sortOrder := 1
+
+		featuredArticle := entity.NewFeaturedArticle(articleID, sortOrder)
+
+		require.NotNil(t, featuredArticle)
+		assert.Equal(t, articleID, featuredArticle.ArticleID)
+		assert.Equal(t, sortOrder, featuredArticle.SortOrder)
+		assert.WithinDuration(t, time.Now(), featuredArticle.CreatedAt, time.Second)
+		// IDは永続化時に設定されるため0のはず
+		assert.Zero(t, featuredArticle.ID)
+	})
+
+	t.Run("sortOrderが負の値でも作成できること", func(t *testing.T) {
+		t.Parallel()
+		articleID := int64(456)
+		sortOrder := -100
+
+		featuredArticle := entity.NewFeaturedArticle(articleID, sortOrder)
+
+		require.NotNil(t, featuredArticle)
+		assert.Equal(t, sortOrder, featuredArticle.SortOrder)
+	})
+}
